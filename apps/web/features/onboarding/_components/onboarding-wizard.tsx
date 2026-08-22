@@ -9,6 +9,10 @@ import { createSessionRecoveryController } from "../../auth/_use-cases/session-r
 import { isTestAuthAdapterEnabledInBrowser } from "../../../shared/testing/test-auth-adapter";
 import type { OnboardingApiDependencies } from "../_adapters/onboarding-api";
 import {
+	madridDateBoundary,
+	type MadridDateBoundary,
+} from "../_domain/goal-target-date";
+import {
 	hydrateAvailability,
 	reduceAvailability,
 	toAvailabilityDraft,
@@ -56,14 +60,6 @@ type WizardState = {
 	availability: AvailabilityInteractionState;
 };
 
-function todayIsoDate(): string {
-	const now = new Date();
-	const year = now.getFullYear();
-	const month = String(now.getMonth() + 1).padStart(2, "0");
-	const day = String(now.getDate()).padStart(2, "0");
-	return `${year}-${month}-${day}`;
-}
-
 function createApiDependencies(): OnboardingApiDependencies {
 	return {
 		apiBaseUrl: (process.env.NEXT_PUBLIC_KAITO_API_URL ?? "").trim(),
@@ -110,7 +106,7 @@ export function OnboardingWizard() {
 		signOut: signOutBrowserSession,
 		replace: (destination) => router.replace(destination),
 	}), [router]);
-	const today = useMemo(() => todayIsoDate(), []);
+	const [dateBoundary, setDateBoundary] = useState<MadridDateBoundary>(() => madridDateBoundary());
 	const saveInFlight = useRef(false);
 
 	const [phase, setPhase] = useState<Phase>("loading");
@@ -132,6 +128,7 @@ export function OnboardingWizard() {
 
 	useEffect(() => {
 		let cancelled = false;
+		const boundary = madridDateBoundary();
 		async function loadEligibility() {
 			setPhase("eligibility_loading");
 			const eligibility = await loadCurrentTrainingApproachEligibility(dependencies);
@@ -144,7 +141,7 @@ export function OnboardingWizard() {
 			setPhase("choice");
 		}
 
-		loadOnboardingDraft(today, dependencies).then((outcome) => {
+		loadOnboardingDraft(boundary.today, dependencies).then((outcome) => {
 			if (cancelled) return;
 			if (outcome.status === "error") {
 				setPhase("load_error");
@@ -173,7 +170,7 @@ export function OnboardingWizard() {
 		return () => {
 			cancelled = true;
 		};
-	}, [today, dependencies, eligibilityAttempt]);
+	}, [dependencies, eligibilityAttempt]);
 
 	async function enterChoiceFlow() {
 		setPhase("eligibility_loading");
@@ -298,6 +295,8 @@ export function OnboardingWizard() {
 
 	async function handleNext() {
 		if (saveInFlight.current) return;
+		const boundary = madridDateBoundary();
+		setDateBoundary(boundary);
 		const currentStep = ONBOARDING_STEPS[stepIndex];
 		const issues =
 			currentStep.id === "availability"
@@ -313,19 +312,33 @@ export function OnboardingWizard() {
 			currentStep.id === "availability"
 				? projectAvailability(draft, wizard.availability)
 				: draft;
-		const errors = validateStep(currentStep.id, validationDraft);
+		const errors = validateStep(currentStep.id, validationDraft, boundary.today);
 		setFieldErrors(errors);
 		if (Object.keys(errors).length > 0) return;
+		const goalErrors = validateStep("goal", validationDraft, boundary.today);
+		if (Object.keys(goalErrors).length > 0) {
+			setStepIndex(0);
+			setFieldErrors(goalErrors);
+			return;
+		}
 
 		const cleared = applyConditionalClearing(validationDraft);
 		setWizard((current) => ({ ...current, draft: cleared }));
+		const submissionBoundary = madridDateBoundary();
+		setDateBoundary(submissionBoundary);
+		const submissionGoalErrors = validateStep("goal", cleared, submissionBoundary.today);
+		if (Object.keys(submissionGoalErrors).length > 0) {
+			setStepIndex(0);
+			setFieldErrors(submissionGoalErrors);
+			return;
+		}
 
 		const isLastStep = stepIndex === ONBOARDING_STEPS.length - 1;
 		saveInFlight.current = true;
 		setSaveStatus("saving");
 		const outcome = isLastStep
-			? await completeOnboarding(cleared, today, dependencies)
-			: await saveOnboardingStep(cleared, today, dependencies);
+			? await completeOnboarding(cleared, submissionBoundary.today, dependencies)
+			: await saveOnboardingStep(cleared, submissionBoundary.today, dependencies);
 		saveInFlight.current = false;
 
 		if (outcome.status === "error") {
@@ -442,7 +455,9 @@ export function OnboardingWizard() {
 				stepId={currentStep.id}
 				draft={draft}
 				errors={fieldErrors}
+				minimumTargetDate={dateBoundary.tomorrow}
 				onGoalChange={updateGoal}
+				onTargetDateFocus={() => setDateBoundary(madridDateBoundary())}
 				onPriorHistoryChange={updatePriorHistory}
 				onBaselineChange={updateBaseline}
 				availability={wizard.availability}

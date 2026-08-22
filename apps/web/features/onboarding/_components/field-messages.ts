@@ -9,6 +9,10 @@ export function fieldErrorMessage(
 			return `Este campo es obligatorio: ${label}.`;
 		case "invalid_type":
 			return `El valor de "${label}" no es válido.`;
+		case "invalid_date":
+			return "Introduce una fecha válida con formato AAAA-MM-DD.";
+		case "not_future":
+			return "Elige una fecha posterior a hoy en horario de Madrid.";
 		case "out_of_range":
 			return `Revisa el valor de "${label}".`;
 		case "invalid_length":

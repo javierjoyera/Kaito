@@ -1,4 +1,5 @@
 import { hydrateAvailability, validateAvailabilityInteraction } from "./availability-model";
+import { madridDateBoundary, validateGoalTargetDate } from "./goal-target-date";
 import type { StepId } from "./steps";
 
 export type Modality = "trail" | "ultra_trail" | "ocr" | "backyard";
@@ -90,6 +91,8 @@ export type OnboardingSnapshotDraft = {
 export type FieldErrorCode =
 	| "required"
 	| "invalid_type"
+	| "invalid_date"
+	| "not_future"
 	| "out_of_range"
 	| "invalid_length";
 
@@ -133,8 +136,6 @@ const PHYSICAL_STATUSES = new Set<PhysicalStatus>([
 	"recovering",
 ]);
 
-const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-
 const CONDITIONAL_GOAL_FIELDS: Record<Modality, readonly string[]> = {
 	trail: ["goal.target_distance_km", "goal.positive_elevation_m"],
 	ultra_trail: ["goal.target_distance_km", "goal.positive_elevation_m"],
@@ -164,7 +165,7 @@ function isPositiveInteger(value: unknown): value is number {
 	return Number.isInteger(value) && (value as number) >= 1;
 }
 
-export function validateGoalStep(goal: GoalDraft): FieldErrors {
+export function validateGoalStep(goal: GoalDraft, madridToday = madridDateBoundary().today): FieldErrors {
 	const errors: FieldErrors = {};
 
 	if (goal.modality === undefined) {
@@ -175,8 +176,9 @@ export function validateGoalStep(goal: GoalDraft): FieldErrors {
 
 	if (!goal.target_date) {
 		errors["goal.target_date"] = "required";
-	} else if (!DATE_PATTERN.test(goal.target_date)) {
-		errors["goal.target_date"] = "invalid_type";
+	} else {
+		const targetDateError = validateGoalTargetDate(goal.target_date, madridToday);
+		if (targetDateError) errors["goal.target_date"] = targetDateError;
 	}
 
 	const conditionalFields =
@@ -422,10 +424,11 @@ export function validatePhysicalStatusStep(
 export function validateStep(
 	stepId: StepId,
 	snapshot: OnboardingSnapshotDraft,
+	madridToday = madridDateBoundary().today,
 ): FieldErrors {
 	switch (stepId) {
 		case "goal":
-			return validateGoalStep(snapshot.goal);
+			return validateGoalStep(snapshot.goal, madridToday);
 		case "prior_history":
 			return validatePriorHistoryStep(snapshot.profile.prior_history ?? {});
 		case "baseline":
