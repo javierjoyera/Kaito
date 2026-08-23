@@ -20,6 +20,19 @@ describe("goal target date", () => {
 		assert.equal(validateGoalTargetDate("2026-08-02", "2026-08-01"), null);
 	});
 
+	test("keeps exact strict-future boundaries across month, leap-day, and year transitions", () => {
+		for (const [today, tomorrow] of [
+			["2030-04-30", "2030-05-01"],
+			["2032-02-29", "2032-03-01"],
+			["2030-12-31", "2031-01-01"],
+		] as const) {
+			const boundary = madridDateBoundary(() => new Date(`${today}T12:00:00.000Z`));
+			assert.deepEqual(boundary, { today, tomorrow });
+			assert.equal(validateGoalTargetDate(today, boundary.today), "not_future");
+			assert.equal(validateGoalTargetDate(tomorrow, boundary.today), null);
+		}
+	});
+
 	test("uses Madrid rather than UTC and preserves strict-future validation across DST boundaries", () => {
 		let clockCalls = 0;
 		assert.deepEqual(madridDateBoundary(() => {

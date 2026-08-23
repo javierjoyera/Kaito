@@ -42,4 +42,4 @@ Chain strategy: pending
 ## Phase 4: Verification and Evidence
 
 - [x] 4.1 Run focused unit/E2E suites, `pnpm test:web-onboarding`, `pnpm lint:web`, and `pnpm build:web`; record exact commands/results and only claim scenarios backed by passing runtime assertions.
-- [x] 4.2 Confirm no backend/request-shape files changed; document rollback as reverting the four listed frontend/test files and retain the existing modified-test safety net before RED.
+- [x] 4.2 Confirm no backend/request-shape files changed and document rollback as reverting the listed frontend/test files. The exact pre-RED Playwright test count and output hash are unavailable, so no stronger modified-test safety-net evidence is claimed.

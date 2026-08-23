@@ -124,8 +124,11 @@ testing:
     CI runs deterministic web contract tests, Chromium E2E checks, API tests,
     Docker image builds, and a Docker-backed local Supabase RLS integration
     proof. Local init verification passed the 25 portable-path tests, collected
-    748 non-integration API tests, and listed 85 Playwright tests. No coverage
-    reporter or threshold is configured.
+    748 non-integration API tests, and listed 85 development-config Playwright
+    tests; initialization did not collect a production-config count. Independent
+    follow-up listing on 2026-08-23 collected 89 development-config tests
+    (including the newly added Madrid reconciliation regression) and 1
+    production-config test. No coverage reporter or threshold is configured.
 
 architecture:
   repo_shape: modular monorepo

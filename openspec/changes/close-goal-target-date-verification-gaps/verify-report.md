@@ -188,3 +188,7 @@ suggestion_findings: 0
 **FAIL**
 
 The six historical verification gaps are closed and all normal suites, lint, and build pass, but the new durable-evidence requirement is contradicted by a reproducible ambient-clock failure after the remaining fixed 2026 fixture expires. Archive must remain blocked.
+
+### Non-Retroactive Follow-Up
+
+This report remains the historical FAIL record and its original claims are unchanged. The later archived PASS report at `../archive/2026-08-22-stabilize-wizard-draft-goal-date-fixture/verify-report.md` records evidence revision `sha256:53308efeb08959912f6d2412b6719293a0f2e8a7cb9ec94cf1c3b634c58ee305`. The current follow-up additionally strengthens the valid-flow browser proof with an explicit PUT-method assertion and the second Madrid capture date; it does not retroactively alter this verdict or its evidence.

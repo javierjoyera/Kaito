@@ -143,6 +143,7 @@ export function OnboardingWizard() {
 
 		loadOnboardingDraft(boundary.today, dependencies).then((outcome) => {
 			if (cancelled) return;
+			setDateBoundary(boundary);
 			if (outcome.status === "error") {
 				setPhase("load_error");
 				return;
