@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { getAccessToken } from "../../auth/_adapters/get-access-token";
-import { getBrowserSupabaseClient } from "../../auth/_infrastructure/supabase/browser";
+import { browserSignOut } from "../../auth/_adapters/browser-sign-out";
 import { createSessionRecoveryController } from "../../auth/_use-cases/session-recovery-controller";
 import { isTestAuthAdapterEnabledInBrowser } from "../../../shared/testing/test-auth-adapter";
 import type { OnboardingApiDependencies } from "../_adapters/onboarding-api";
@@ -71,11 +71,7 @@ function createApiDependencies(): OnboardingApiDependencies {
 }
 
 async function signOutBrowserSession(): Promise<void> {
-	if (isTestAuthAdapterEnabledInBrowser()) {
-		document.cookie = "kaito-e2e-session=; Path=/; Max-Age=0; SameSite=Lax";
-		return;
-	}
-	await getBrowserSupabaseClient()?.auth.signOut();
+	await browserSignOut();
 }
 
 function createWizardState(draft: OnboardingSnapshotDraft): WizardState {
