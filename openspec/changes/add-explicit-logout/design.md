@@ -2,79 +2,76 @@
 
 ## Chosen Architecture
 
-Add a browser adapter, provider-neutral use case, and accessible client control; compose them only in `ActivePlanDashboard`. This follows Kaito's auth boundaries (`_adapters` translate, `_use-cases` normalize, `_components` interact) without inventing a private shell. Like a race checkpoint, the adapter reads timing, the use case confirms checkout, and the dashboard chooses the next marker.
+Preserve the delivered auth boundary and approved DOM harness, control, surface, and safety slices. Insert a pnpm 11 normalization child after PR1 so dependency selection is measured without a 5.5K–5.8K-line formatting rewrite. Like resurfacing the track before timing runners, normalization makes later measurements meaningful without changing the course.
 
-## Proposed File and Symbol Map
+## Architecture Decisions
 
-| File / symbol | Responsibility and dependencies | Explicit non-responsibility |
+| Option | Tradeoff | Decision |
 |---|---|---|
-| `apps/web/features/auth/_adapters/browser-sign-out.ts` — `createBrowserSignOutAdapter` | Under the existing test gate clear `kaito-e2e-session`; otherwise call cached Supabase `auth.signOut`; map missing client/error to `{ ok: false }`. | UI, retry, navigation, recovery policy. |
-| `apps/web/features/auth/_use-cases/explicit-logout.ts` — `ProviderSignOutAdapter`, `ProviderSignOutResult`, `LogoutOutcome`, `ExplicitLogout`, `createExplicitLogout` | Convert adapter result or thrown exception into `success | error`; never leak provider data. | Single-flight, focus, copy, navigation. |
-| `apps/web/features/auth/_components/logout-control.tsx` — `LogoutControl` | Receive `logout` and `onSuccess`; own idle/pending/error state, ref-based single-flight, semantic feedback, retry, and focus. | Supabase, cookies, destination choice. |
-| `apps/web/features/planning/_components/active-plan-dashboard.tsx` — `ActivePlanDashboard`, `Plan`, `DashboardSidebar` | Compose dependencies, mount in a sidebar footer below metadata, and on success call `window.location.replace("/login")`. | Other surfaces/guard redesign. |
-| `onboarding-wizard.tsx`, `plan-generation.tsx`, `active-plan-dashboard.tsx` | Replace duplicated recovery sign-out helpers with the adapter, ignoring its result through recovery's `Promise<void>` callback. | Confirmed-success recovery semantics. |
-| `apps/web/app/styles.css` | Add `.logout-control`/sidebar-footer responsive, focus, error, pending rules beside plan-sidebar CSS. | Design-system extraction. |
-| `browser-sign-out.test.ts`, `explicit-logout.test.ts`, `session-recovery-controller.test.ts` | Adapter equivalence, normalization, recovery regression. | Route behavior. |
-| `apps/web/e2e/active-plan-dashboard.spec.ts`, `session-flow.spec.ts` | Placement, interaction, failure/focus, full navigation, cookie and private-route safety. | Provider internals. |
+| Standalone canonicalization PR | One extra chain child; isolates a huge generated diff | Chosen as PR2, branch `chore/pnpm-lock-normalization`, targeting `feat/explicit-logout-auth`, with generated-file `size:exception`. |
+| Normalize while adding DOM dependencies | Fewer PRs, but hides dependency changes inside unrelated churn | Rejected. PR2 changes only `pnpm-lock.yaml`; OpenSpec traceability may accompany it, but no manifests, dependencies, source, or tests. |
+| `jsdom@29` + `global-jsdom@29` versus `jsdom@30` + manual globals | Convenience/compatibility versus newer JSDOM/manual lifecycle control | Deferred until post-normalization install measurement. |
+| Node/tsx DOM component harness | Adds test dependencies/lifecycle but proves an unmounted component | Preserved. No Jest, Vitest, happy-dom, or jest-dom. |
+| Merge harness/control or use Playwright only | Smaller chain, but mixes infrastructure/behavior or cannot prove the control independently | Rejected; preserve autonomous review and rollback boundaries. |
+| Direct Supabase UI call/global service/shared private layout/changed recovery semantics | Less wiring, but leaks provider mechanics or alters route/recovery policy | Rejected; preserve `_adapters` → `_use-cases` → `_components`, with navigation owned by the dashboard. |
 
-## Dependency and Sequences
+## DOM Harness Decision (PR3)
 
-```text
-ActivePlanDashboard -> LogoutControl -> createExplicitLogout -> ProviderSignOutAdapter
-                                                       -> Supabase | gated E2E cookie
+`apps/web/shared/testing/dom-component-test-harness.ts` remains Node-only: component test → harness → JSDOM/Testing Library, never production imports. Per non-concurrent test, create a loopback DOM, install globals, set/restore `IS_REACT_ACT_ENVIRONMENT`, and bind user-event to its document. In `finally`, `cleanup()` unmounts roots; body/storage/globals/act state restore and the window closes, including failures.
 
-success: activate -> pending -> adapter ok -> success callback -> location.replace(/login) -> server guard
-failure: activate -> pending -> error/throw -> alert -> focus retry button -> retryable idle
-recovery: private API auth error -> shared adapter attempt (outcome ignored/throw swallowed)
-         -> router.replace(/login?returnTo=...) regardless
-```
+Keep `tsx --test`; extend `test:auth` to `.test.tsx`. Tests use wrapper-local render queries, awaited user-event/`act`, deferred logout promises, Node `assert`, and `document.activeElement`; no runner-global hooks, `screen` import-order assumptions, Jest matchers, or fake timers. The harness owns no dashboard, CSS, route, navigation, provider simulation, or production abstraction.
 
-Navigation belongs to dashboard/control composition because destination and history replacement are surface policy. In the adapter it couples provider translation to routes; in the use case it couples auth flow to browser navigation. Like checkout confirmation versus choosing the route home, they are separate decisions.
+## Chain and File Map
 
-## Resolved Contracts and Decisions
+`PR1 auth → PR2 normalization → PR3 harness → PR4 control → PR5 surface → PR6 safety → tracker → main`. Every child targets its immediate predecessor; PR3 `feat/explicit-logout-harness` targets `chore/pnpm-lock-normalization`.
 
-```ts
-type ProviderSignOutResult = { ok: true } | { ok: false };
-type LogoutOutcome = { status: "success" } | { status: "error" };
-```
-
-The use case catches every exception as `error`. A synchronous control ref—not React state/use case—rejects duplicates. Pending uses a disabled `aria-busy` button and `role="status"`. Failure shows `role="alert"` (“No hemos podido cerrar tu sesión. Inténtalo de nuevo.”), enables/focuses the same button as “Reintentar cierre de sesión,” and retry clears the alert before one fresh operation. Gated E2E uses a consumed `sessionStorage` fail-once value; success clears the session cookie.
-
-## Rejected Alternatives
-
-| Alternative | Rejection |
+| PR | Repository content |
 |---|---|
-| Direct Supabase component call | Leaks provider/test mechanics. |
-| Global service | Hides ownership; adds mutable cross-surface lifecycle. |
-| Shared private layout | Changes composition/loading/guards for one control. |
-| Changed recovery semantics | Could strand invalid sessions; recovery remains best-effort evacuation. |
+| PR1 | Existing `browser-sign-out.ts`, `explicit-logout.ts`, recovery consumers/tests; unchanged. |
+| PR2 | Canonical `pnpm-lock.yaml` only; optional OpenSpec traceability. |
+| PR3 | `apps/web/package.json`, minimal dependency lockfile delta, test script, `shared/testing/dom-component-test-harness{,.test}.tsx`. |
+| PR4 | `auth/_components/logout-control{,.test}.tsx`: injected use case, single-flight, pending/error, retry/focus. |
+| PR5 | `active-plan-dashboard.tsx`, `app/styles.css`, `e2e/active-plan-dashboard.spec.ts`: mount, styling, approved/excluded surfaces. |
+| PR6 | `active-plan-dashboard.tsx`, `e2e/session-flow.spec.ts`: confirmed `location.replace("/login")`, history/private-route safety. |
 
-## Scenario-to-Proof Map
+## Lockfile Normalization Proof and Review
 
-| Spec scenarios | Boundary | RED proof |
-|---|---|---|
-| Surface limit; keyboard activation | Dashboard/control | Playwright `/plan`, `/onboarding`, `/plan/generating` |
-| Double activation; pending observable | Control | Playwright delayed adapter/call count |
-| Success; private history safety | Dashboard + existing page guards | Playwright navigation, back, refresh, direct routes |
-| Rejection/throw; retry success | Use case/control | Node normalization tests + Playwright fail-once/focus |
-| Adapter equivalence | Adapter contract | Node Supabase/E2E cases |
-| Recovery regression | Recovery controller/wiring | Node rejection test + existing route-recovery E2E |
-| Semantic status/focus | Control/CSS | Playwright role, text, focus, non-color assertions |
+From a clean PR2 worktree with unchanged manifests:
+
+```sh
+test "$(pnpm --version)" = "11.0.0"
+pnpm list -r --lockfile-only --json --depth Infinity | jq -S -c . | shasum -a 256 > "$TMPDIR/kaito-graph.before.sha256"
+pnpm install --lockfile-only
+pnpm list -r --lockfile-only --json --depth Infinity | jq -S -c . | shasum -a 256 > "$TMPDIR/kaito-graph.after.sha256"
+cmp "$TMPDIR/kaito-graph.before.sha256" "$TMPDIR/kaito-graph.after.sha256"
+cp pnpm-lock.yaml "$TMPDIR/kaito-pnpm-lock.canonical.yaml"
+pnpm install --frozen-lockfile --lockfile-only
+pnpm install --lockfile-only
+cmp pnpm-lock.yaml "$TMPDIR/kaito-pnpm-lock.canonical.yaml"
+git diff --exit-code -- package.json apps/web/package.json packages/api-client/package.json
+git diff --name-only | while IFS= read -r p; do case "$p" in pnpm-lock.yaml|openspec/changes/add-explicit-logout/*) ;; *) exit 1;; esac; done
+```
+
+Allow only the lockfile and declared OpenSpec traceability paths. Review provenance, graph-hash equality, lockfile header, importer identities/counts, package/snapshot counts, and second-run convergence—not 5K+ generated lines one by one.
+
+The `size:exception` covers generated lockfile normalization only. Any dependency, manifest, source, or test change invalidates it and blocks PR2.
+
+## Contracts, Proof, and Rollback
+
+`ProviderSignOutResult` remains `{ok:true}|{ok:false}`; `LogoutOutcome` remains `success|error`. A synchronous ref rejects duplicates. Pending remains disabled/`aria-busy` with `role="status"`; failure uses `role="alert"` (“No hemos podido cerrar tu sesión. Inténtalo de nuevo.”) and focuses “Reintentar cierre de sesión.” PR4 proves those contracts. PR5 proves placement/exclusions. PR6 preserves consumed fail-once `sessionStorage`, clears the E2E cookie on success, and proves confirmed-only `location.replace`, once-only navigation, and private-history safety. Recovery remains best-effort.
+
+PR2 rollback is a revert of the normalization commit: manifests and logical dependency graph remain unchanged. Later slices stay independently reversible. No data migration or feature flag.
 
 ## Threat Matrix
 
-Browser navigation is applicable, but the supplied matrix concerns shell/VCS boundaries:
-
-| Boundary | Applicability / response | RED tests |
+| Boundary | Applicability | Response / RED tests |
 |---|---|---|
-| Documentation-like paths | N/A — no classification/execution | None |
-| Git repository selection | N/A — no Git | None |
-| Commit state | N/A — no commits | None |
-| Push state | N/A — no push | None |
+| Documentation-like paths | N/A — no executable classification | None |
+| Git repository selection | N/A — no Git/process automation is implemented | Manual proof runs from the PR2 worktree |
+| Commit state | N/A — no commit tooling | None |
+| Push state | N/A — no push tooling | None |
 | PR commands | N/A — no PR automation | None |
 
-Route safety is covered by the scenario proofs above.
+## Open Questions
 
-## Migration, Rollback, and Phase Boundary
-
-No migration/flag. Later order: RED contracts, adapter/use case, control, dashboard/recovery, CSS/E2E; rollback reverses it without changing guards/controller. Before verification record worktree bytes: `next build` may normalize `apps/web/next-env.d.ts`; classify separately and restore unrelated pre-verification bytes. These are design decisions; `sdd-tasks` schedules work later. No open questions.
+- [ ] After canonicalization, which candidate produces the smaller compatible dependency delta: jsdom 29/global-jsdom 29 or jsdom 30/manual globals?
