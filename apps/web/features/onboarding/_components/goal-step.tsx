@@ -9,7 +9,9 @@ import { NumberField } from "./number-field";
 type GoalStepProps = Readonly<{
 	value: GoalDraft;
 	errors: FieldErrors;
+	minimumTargetDate: string;
 	onChange: (patch: Partial<GoalDraft>) => void;
+	onTargetDateFocus: () => void;
 }>;
 
 const GOAL_MODALITIES: readonly { value: Modality; label: string }[] = [
@@ -17,7 +19,13 @@ const GOAL_MODALITIES: readonly { value: Modality; label: string }[] = [
 	{ value: "ultra_trail", label: "Ultra" },
 ];
 
-export function GoalStep({ value, errors, onChange }: GoalStepProps) {
+export function GoalStep({
+	value,
+	errors,
+	minimumTargetDate,
+	onChange,
+	onTargetDateFocus,
+}: GoalStepProps) {
 	return (
 		<fieldset className="onboarding-step">
 			<legend className="onboarding-visually-hidden">
@@ -74,15 +82,22 @@ export function GoalStep({ value, errors, onChange }: GoalStepProps) {
 				<input
 					id="goal-target-date"
 					type="date"
+					min={minimumTargetDate}
 					value={value.target_date ?? ""}
 					aria-invalid={Boolean(errors["goal.target_date"])}
 					aria-describedby={
-						errors["goal.target_date"] ? "goal-target-date-error" : undefined
+						errors["goal.target_date"]
+							? "goal-target-date-help goal-target-date-error"
+							: "goal-target-date-help"
 					}
+					onFocus={onTargetDateFocus}
 					onChange={(event) =>
 						onChange({ target_date: event.target.value || undefined })
 					}
-				/>
+					/>
+					<p id="goal-target-date-help">
+						Elige una fecha posterior a hoy en horario de Madrid. La primera fecha válida es {minimumTargetDate}.
+					</p>
 				{errors["goal.target_date"] ? (
 					<p
 						className="onboarding-field-error"

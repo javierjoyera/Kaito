@@ -43,7 +43,7 @@ const completeDraft: OnboardingSnapshotDraft = {
 	},
 	goal: {
 		modality: "trail" as const,
-		target_date: "2026-10-03",
+		target_date: "2099-10-03",
 		target_distance_km: 45,
 		positive_elevation_m: 1800,
 	},

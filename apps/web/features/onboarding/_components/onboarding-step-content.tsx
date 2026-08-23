@@ -26,7 +26,9 @@ type OnboardingStepContentProps = Readonly<{
 	stepId: StepId;
 	draft: OnboardingSnapshotDraft;
 	errors: FieldErrors;
+	minimumTargetDate: string;
 	onGoalChange: (patch: Partial<GoalDraft>) => void;
+	onTargetDateFocus: () => void;
 	onPriorHistoryChange: (patch: Partial<PriorHistoryDraft>) => void;
 	onBaselineChange: (patch: Partial<BaselineDraft>) => void;
 	availability: AvailabilityInteractionState;
@@ -41,7 +43,9 @@ export function OnboardingStepContent({
 	stepId,
 	draft,
 	errors,
+	minimumTargetDate,
 	onGoalChange,
+	onTargetDateFocus,
 	onPriorHistoryChange,
 	onBaselineChange,
 	availability,
@@ -62,7 +66,15 @@ export function OnboardingStepContent({
 					<p>Cuéntame qué carrera tienes en mente. Es la brújula de todo tu plan.</p>
 				</header>
 			);
-			body = <GoalStep value={draft.goal} errors={errors} onChange={onGoalChange} />;
+				body = (
+					<GoalStep
+						value={draft.goal}
+						errors={errors}
+						minimumTargetDate={minimumTargetDate}
+						onChange={onGoalChange}
+						onTargetDateFocus={onTargetDateFocus}
+					/>
+				);
 			break;
 		case "prior_history":
 			heading = (

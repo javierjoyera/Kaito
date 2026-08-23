@@ -1,6 +1,7 @@
 import { strict as assert } from "node:assert";
 import { describe, test } from "node:test";
 
+import { fieldErrorMessage } from "../_components/field-messages";
 import { validateStep, type OnboardingSnapshotDraft } from "./step-validation";
 
 function draft(
@@ -26,21 +27,63 @@ describe("validateStep(goal)", () => {
 			draft({
 				goal: {
 					modality: "trail",
-					target_date: "2026-12-01",
+				target_date: "2030-08-02",
 					target_distance_km: 42,
 					positive_elevation_m: 1500,
 				},
 			}),
+			"2030-08-01",
 		);
 		assert.deepEqual(errors, {});
+	});
+
+	test("maps invalid and non-future target dates without changing the draft value", () => {
+		const invalid = draft({
+			goal: {
+				modality: "trail",
+				target_date: "2026-02-30",
+				target_distance_km: 42,
+				positive_elevation_m: 1500,
+			},
+		});
+		assert.equal(
+			validateStep("goal", invalid, "2026-08-01")["goal.target_date"],
+			"invalid_date",
+		);
+		assert.equal(invalid.goal.target_date, "2026-02-30");
+		assert.equal(
+			validateStep(
+				"goal",
+				{ ...invalid, goal: { ...invalid.goal, target_date: "2026-08-01" } },
+				"2026-08-01",
+			)["goal.target_date"],
+			"not_future",
+		);
+		assert.deepEqual(
+			validateStep(
+				"goal",
+				{ ...invalid, goal: { ...invalid.goal, target_date: "2026-08-02" } },
+				"2026-08-01",
+			),
+			{},
+		);
+		assert.equal(
+			fieldErrorMessage("invalid_date", "Fecha objetivo"),
+			"Introduce una fecha válida con formato AAAA-MM-DD.",
+		);
+		assert.equal(
+			fieldErrorMessage("not_future", "Fecha objetivo"),
+			"Elige una fecha posterior a hoy en horario de Madrid.",
+		);
 	});
 
 	test("requires distance and elevation, but not removed or optional goal fields", () => {
 		const errors = validateStep(
 			"goal",
 			draft({
-				goal: { modality: "trail", target_date: "2026-12-01" },
+				goal: { modality: "trail", target_date: "2030-08-02" },
 			}),
+			"2030-08-01",
 		);
 		assert.equal(errors["goal.target_distance_km"], "required");
 		assert.equal(errors["goal.positive_elevation_m"], "required");
@@ -53,11 +96,12 @@ describe("validateStep(goal)", () => {
 			draft({
 				goal: {
 					modality: "ultra_trail",
-					target_date: "2026-12-01",
+				target_date: "2030-08-03",
 					target_distance_km: 65,
 					positive_elevation_m: 3400,
 				},
 			}),
+			"2030-08-01",
 		);
 		assert.deepEqual(errors, {});
 	});
@@ -66,8 +110,9 @@ describe("validateStep(goal)", () => {
 		const errors = validateStep(
 			"goal",
 			draft({
-				goal: { modality: "ocr", target_date: "2026-12-01" },
+				goal: { modality: "ocr", target_date: "2030-08-02" },
 			}),
+			"2030-08-01",
 		);
 		assert.equal(errors["goal.modality"], "invalid_type");
 	});

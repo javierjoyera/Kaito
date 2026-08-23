@@ -41,6 +41,23 @@ async function authenticate(page: Page) {
 	]);
 }
 
+async function freezeMadridDate(page: Page, instant = "2030-08-01T12:00:00.000Z") {
+	await page.clock.setFixedTime(new Date(instant));
+}
+
+async function armMadridCaptureQueue(page: Page, instants: readonly string[]) {
+	await page.evaluate((queuedInstants) => {
+		const nativeDate = Date;
+		const queue = [...queuedInstants];
+		// The queue is opt-in and changes only synchronous zero-argument Date captures.
+		globalThis.Date = class extends nativeDate {
+			constructor(...args: ConstructorParameters<typeof Date>) {
+				super(...(args.length === 0 && queue.length > 0 ? [queue.shift()!] : args));
+			}
+		} as DateConstructor;
+	}, instants);
+}
+
 async function startWithBlankDraft(page: Page) {
 	await authenticate(page);
 	await page.route(`${API_ORIGIN}/**`, async (route: Route) => {
@@ -76,7 +93,7 @@ async function startAtStepTwo(
 		.click();
 	await page.getByLabel("Distancia (km)").fill("45");
 	await page.getByLabel("Desnivel + (m)").fill("1800");
-	await page.getByLabel("Fecha objetivo").fill("2026-10-03");
+	await page.getByLabel("Fecha objetivo").fill("2099-08-02");
 	await page.getByRole("button", { name: "Continuar" }).click();
 	return savedSnapshots;
 }
@@ -108,6 +125,90 @@ test.describe("onboarding intro and step 1", () => {
 		await expect(page.getByRole("button", { name: /Atrás/i })).toHaveCount(0);
 		await expect(page.getByText("Tecnicidad del recorrido")).toHaveCount(0);
 		await expect(page.getByText("Altitud máxima estimada")).toHaveCount(0);
+	});
+
+	test("goal target date exposes Madrid guidance and preserves a rejected value without a PUT", async ({ page }) => {
+		await freezeMadridDate(page);
+		await authenticate(page);
+		let putRequests = 0;
+		await page.route(`${API_ORIGIN}/**`, async (route: Route) => {
+			if (route.request().method() === "PUT") putRequests += 1;
+			await route.fulfill({ status: 404, body: "not found" });
+		});
+		await page.goto("/onboarding");
+		await page.getByRole("button", { name: "Crear mi plan" }).click();
+		const targetDate = page.getByLabel("Fecha objetivo");
+		await expect(targetDate).toHaveAttribute("min", "2030-08-02");
+		await expect(page.locator("#goal-target-date-help")).toContainText("2030-08-02");
+		await expect(targetDate).toHaveAttribute("aria-describedby", "goal-target-date-help");
+		await targetDate.fill("2030-08-01");
+		await page.getByRole("button", { name: "Continuar" }).click();
+		await expect(targetDate).toHaveValue("2030-08-01");
+		await expect(targetDate).toHaveAttribute("aria-invalid", "true");
+		await expect(targetDate).toHaveAttribute("aria-describedby", "goal-target-date-help goal-target-date-error");
+		await expect(page.locator("#goal-target-date-error[role='alert']")).toHaveText("Elige una fecha posterior a hoy en horario de Madrid.");
+		expect(putRequests).toBe(0);
+	});
+
+	test("rejects a target that becomes Madrid today before the PUT without changing it", async ({ page }) => {
+		await freezeMadridDate(page);
+		await authenticate(page);
+		let putRequests = 0;
+		await page.route(`${API_ORIGIN}/**`, async (route: Route) => {
+			if (route.request().method() === "PUT") putRequests += 1;
+			await route.fulfill({ status: 404, body: "not found" });
+		});
+		await page.goto("/onboarding");
+		await page.getByRole("button", { name: "Crear mi plan" }).click();
+		await page.getByRole("button", { name: "Trail" }).click();
+		await page.getByLabel("Distancia (km)").fill("45");
+		await page.getByLabel("Desnivel + (m)").fill("1800");
+		const targetDate = page.getByLabel("Fecha objetivo");
+		await targetDate.fill("2030-08-02");
+		await armMadridCaptureQueue(page, [
+			"2030-08-01T21:59:59.000Z",
+			"2030-08-01T22:00:01.000Z",
+		]);
+		await page.getByRole("button", { name: "Continuar" }).click();
+		await expect(targetDate).toHaveValue("2030-08-02");
+		await expect(page.locator("#goal-target-date-error[role='alert']")).toHaveText("Elige una fecha posterior a hoy en horario de Madrid.");
+		expect(putRequests).toBe(0);
+	});
+
+	test("sends one unchanged-contract PUT with the fresh Madrid validation date", async ({ page }) => {
+		await freezeMadridDate(page);
+		await authenticate(page);
+		const requests: Array<{ method: string; body: unknown }> = [];
+		await page.route(`${API_ORIGIN}/**`, async (route: Route) => {
+			if (route.request().method() === "GET") {
+				await route.fulfill({ status: 404, body: "not found" });
+				return;
+			}
+			const body = JSON.parse(route.request().postData() ?? "{}");
+			if (route.request().method() === "PUT") {
+				requests.push({ method: route.request().method(), body });
+			}
+			await route.fulfill({
+				status: 200,
+				contentType: "application/json",
+				body: JSON.stringify({ snapshot: body.snapshot, diagnostics: [] }),
+			});
+		});
+		await page.goto("/onboarding");
+		await page.getByRole("button", { name: "Crear mi plan" }).click();
+		await page.getByRole("button", { name: "Trail" }).click();
+		await page.getByLabel("Distancia (km)").fill("45");
+		await page.getByLabel("Desnivel + (m)").fill("1800");
+		await page.getByLabel("Fecha objetivo").fill("2030-08-03");
+		await armMadridCaptureQueue(page, [
+			"2030-08-01T21:59:59.000Z",
+			"2030-08-01T22:00:01.000Z",
+		]);
+		await page.getByRole("button", { name: "Continuar" }).click();
+		await expect.poll(() => requests).toHaveLength(1);
+		expect(requests[0].method).toBe("PUT");
+		expect(Object.keys(requests[0].body as object).sort()).toEqual(["snapshot", "validation_date"]);
+		expect((requests[0].body as { validation_date: string }).validation_date).toBe("2030-08-02");
 	});
 
 	test("shows step 2 for Trail and preserves both steps when going back", async ({
@@ -268,7 +369,7 @@ async function startWithHydratedAvailability(
 		},
 		goal: {
 			modality: "trail",
-			target_date: "2026-10-03",
+			target_date: "2099-08-02",
 			target_distance_km: 45,
 			positive_elevation_m: 1800,
 		},
@@ -372,7 +473,7 @@ async function startAtPreferencesStep(
 		},
 		goal: {
 			modality: "trail",
-			target_date: "2026-10-03",
+			target_date: "2099-08-02",
 			target_distance_km: 45,
 			positive_elevation_m: 1800,
 		},
@@ -1107,6 +1208,48 @@ test.describe("completed onboarding approach choice", () => {
 			expect(reconciledReads).toBeGreaterThanOrEqual(1);
 		});
 	}
+
+	test("refreshes the rendered Madrid boundary when mounted reconciliation reloads an incomplete Goal", async ({ page }) => {
+		await freezeMadridDate(page, "2030-08-01T21:59:59.000Z");
+		await authenticate(page);
+		let draftFailed = false;
+		const reconciledValidationDates: string[] = [];
+		await page.route(`${API_ORIGIN}/**`, async (route: Route) => {
+			const url = new URL(route.request().url());
+			if (url.pathname === "/runner-profile/onboarding") {
+				if (!draftFailed) {
+					await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ snapshot: completed, diagnostics: [] }) });
+					return;
+				}
+				reconciledValidationDates.push(url.searchParams.get("validation_date") ?? "");
+				await route.fulfill({
+					status: 200,
+					contentType: "application/json",
+					body: JSON.stringify({
+						snapshot: { contract_version: "1", state: "incomplete", profile: {}, goal: {} },
+						diagnostics: [],
+					}),
+				});
+				return;
+			}
+			if (url.pathname === "/planning/training-approach-eligibility") {
+				await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(eligibility) });
+				return;
+			}
+			draftFailed = true;
+			await route.fulfill({ status: 409, contentType: "application/json", body: JSON.stringify({ detail: "Onboarding is incomplete" }) });
+		});
+		await page.goto("/onboarding");
+		await page.getByRole("button", { name: "Crear mi plan" }).click();
+		await page.getByRole("radio", { name: /Camino Kaio/ }).check();
+		await page.clock.setFixedTime(new Date("2030-08-01T22:00:01.000Z"));
+		await page.getByRole("button", { name: /Generar mi plan/ }).click();
+
+		await expect(page.getByRole("heading", { name: "Empecemos por tu objetivo" })).toBeVisible();
+		expect(reconciledValidationDates).toEqual(["2030-08-02"]);
+		await expect(page.getByLabel("Fecha objetivo")).toHaveAttribute("min", "2030-08-03");
+		await expect(page.locator("#goal-target-date-help")).toContainText("2030-08-03");
+	});
 
 	test("returns unsupported drafts to the existing objective recovery", async ({ page }) => {
 		await authenticate(page);
