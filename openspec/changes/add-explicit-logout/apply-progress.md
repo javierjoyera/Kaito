@@ -133,3 +133,63 @@ No executable production behavior is introduced, so a fabricated RED test would 
 - Remediates failed harness evidence: `sha256:46ff1397b6ba39d44cfa6034d71b93ef199455ca46ddc0d442ccdc854f56fffa`.
 - Native candidate changed lines: `5795`; lifetime attempts: `6`; lifetime changed lines: `6018`.
 - Final diagnosis: pnpm 11 canonicalized the lock with identical logical graph, frozen acceptance, byte convergence, and unchanged manifests.
+
+## PR3 `harness` strict-TDD attempt (generation 7, ordinal 7)
+
+**Status:** blocked and reverted before GREEN. The approved matched DOM dependency set is compatible with the declared Node and React support, but its minimal lockfile delta alone exceeded the strict PR3 400 changed-line budget.
+
+### TDD Cycle Evidence — PR3
+
+| Task | Test file / layer | Safety Net | RED | GREEN | TRIANGULATE | REFACTOR | Outcome |
+|---|---|---|---|---|---|---|---|
+| 3.1 | `shared/testing/dom-component-test-harness.test.tsx` / Node DOM integration | `pnpm test:web-auth` → exit 0; 113 pass, 0 fail | Test written first; `pnpm --filter web exec tsx --test shared/testing/dom-component-test-harness.test.tsx` → exit 1; `./dom-component-test-harness` absent; 0 pass, 1 fail | Blocked before production harness code: dependency install breached budget | Not started — GREEN was blocked | Not started — no production code exists | Blocked and reverted |
+| 3.2 | `shared/testing/dom-component-test-harness.ts` / Node DOM integration | Same safety net | N/A — depends on task 3.1 RED | Blocked: install did not fit the 400-line child budget | Not started | Not started | Blocked and reverted |
+
+### Work Unit Evidence — PR3
+
+| Evidence | Result |
+|---|---|
+| Compatibility proof | Node `v24.18.0` satisfies `jsdom@29.1.1` (`^20.19.0 || ^22.13.0 || >=24.0.0`) and `global-jsdom@29.0.0` (`>=20`), while `global-jsdom@29.0.0` peers `jsdom >=29 <30`. `@testing-library/react@16.3.2` peers React/React DOM/types `^18 || ^19` and DOM `^10`; the repository declares React 19.2.0 and matching types. |
+| Focused test command and exact result | `pnpm --filter web exec tsx --test shared/testing/dom-component-test-harness.test.tsx` → exit 1; 0 pass, 1 fail because `./dom-component-test-harness` did not exist. The safety net `pnpm test:web-auth` → exit 0; 113 pass, 0 fail. |
+| Runtime harness command/scenario and exact result | N/A — no runtime harness exists after the mandatory budget rollback; no DOM component or mounted route was introduced. |
+| Budget measurement | `pnpm --filter web add -D jsdom@29.1.1 global-jsdom@29.0.0 @testing-library/react@16.3.2 @testing-library/dom@10.4.1 @testing-library/user-event@14.6.6` → exit 0. Immediately against `chore/pnpm-lock-normalization`, tracked dependency delta was `+447 -0` (`apps/web/package.json +5`, `pnpm-lock.yaml +442`); the already-written RED test was `+67`, so the complete attempt reached `+514 -0` (514 changed lines), exceeding 400 before harness production code. |
+| Normalization order | Safety net → RED test/execution → compatibility-verified matched dependency install → immediate complete-diff measurement → rollback. No production code, triangulation, or refactor occurred. |
+| Rollback boundary | The reverted attempt comprised `apps/web/package.json`, `pnpm-lock.yaml`, and `apps/web/shared/testing/dom-component-test-harness.test.tsx`; no unrelated behavior was changed. |
+
+### Cleanup and Native Context
+
+- Cleanup: deleted the untracked RED test and restored only `apps/web/package.json` and `pnpm-lock.yaml` from `HEAD`. `git status --short`, `git diff --numstat chore/pnpm-lock-normalization`, and `git diff --check chore/pnpm-lock-normalization` were empty/successful after cleanup.
+- Process evidence: the focused `tsx` test and `pnpm add` completed; `pgrep -fl 'tsx|next dev|next start|playwright'` returned no owned test/server process.
+- Chain: feature-branch-chain child `feat/explicit-logout-harness-pr3` starts at clean immediate parent `chore/pnpm-lock-normalization` (`2481b1a`). The historical `feat/explicit-logout-harness` branch was not an ancestor of the parent, so it was not reused.
+- Native attempt: generation `7`, ordinal `7`, work unit `pr3-dom-component-harness`; max attempts `1`; outcome `blocked_budget_reverted` pending orchestrator settlement.
+- Evidence revision: `sha256:d220232e152cbaa307cb88c9e3fb3fdf75405cdbff50aaa1850c551eb261fe76`.
+- Diagnosis: matched `jsdom@29`/`global-jsdom@29` resolves the prior version mismatch, but canonical pnpm still adds 442 lockfile lines. A compatible harness cannot fit this <=400 child while retaining required dependencies and strict-TDD evidence.
+
+## PR3 `dependencies` strict-TDD completion (generation 8, ordinal 8)
+
+**Status:** complete. Work unit `pr3-dom-test-dependencies` adds only the approved DOM test dependency bootstrap. The maintainer-approved `size:exception` applies solely to the generated `pnpm-lock.yaml` delta.
+
+### TDD Cycle Evidence — PR3 Dependency Bootstrap
+
+| Task | Test file / layer | Safety Net | RED | GREEN | TRIANGULATE | REFACTOR | Outcome |
+|---|---|---|---|---|---|---|---|
+| 3.1 | N/A — dependency manifest and lockfile only | `pnpm test:web-auth` → exit 0; 113 pass, 0 fail before mutation | N/A — no executable product behavior or test surface; a RED test would be fabricated | `pnpm --filter web add -D jsdom@29.1.1 global-jsdom@29.0.0 @testing-library/react@16.3.2 @testing-library/dom@10.4.1 @testing-library/user-event@14.6.6` → exit 0; exact entries resolved | N/A — one deterministic dependency set; independent manifest, importer, installed-package, peer/engine, and frozen probes provide proportional coverage | N/A — no production or harness code exists to refactor | Complete |
+| 3.2 | N/A — reproducibility/provenance proof | Same 113/113 safety net | N/A — no executable product behavior or test surface | `pnpm install --frozen-lockfile --lockfile-only` → exit 0; `pnpm install --lockfile-only` → exit 0; byte-for-byte convergence passed | Exact-version, peer/engine, importer, path, frozen, and convergence probes independently confirm the result | N/A — generated resolution only | Complete |
+
+### Work Unit Evidence — PR3 Dependency Bootstrap
+
+| Evidence | Result |
+|---|---|
+| Focused test command and exact result | `pnpm --filter web exec node -e '<manifest/resolution/peer/engine assertion script>'` → exit 0. It verified Node `v24.18.0`; exact versions `29.1.1`, `29.0.0`, `16.3.2`, `10.4.1`, and `14.6.6`; jsdom `^20.19.0 || ^22.13.0 || >=24.0.0`; global-jsdom `>=20` plus jsdom peer `>=29 <30`; Testing Library React peers React/React DOM/types `^18 || ^19` and DOM `^10`; user-event DOM peer `>=7.21.4`. Final `pnpm test:web-auth` → exit 0; 113 pass, 0 fail. |
+| Runtime harness command/scenario and exact result | N/A — this work unit adds no source, DOM harness, route, executable test, or runtime behavior. Runtime lifecycle behavior begins in PR4; frozen resolution and byte convergence are the applicable integration boundary here. |
+| Frozen lock and convergence | A post-install lock witness had SHA-256 `15944e5e2186f0ff4a5064b3da7266caa199b7bcc52a9f13098c3d36d713d077`. `pnpm install --frozen-lockfile --lockfile-only` → exit 0 and preserved those bytes; a second `pnpm install --lockfile-only` → exit 0 and `cmp` passed. Temporary witness was removed by exit trap. |
+| Importer/path/scope proof | `apps/web` importer records the five exact specifiers and resolutions, including `global-jsdom@29.0.0(jsdom@29.1.1)`, Testing Library React with DOM `10.4.1`, and user-event with DOM `10.4.1`. Against `2481b1a`, dependency paths are only `apps/web/package.json` (+5) and `pnpm-lock.yaml` (+442); no source, harness, script, component, route, CSS, navigation, E2E, or runtime file changed. Existing carried OpenSpec traceability paths are `apply-progress.md`, `design.md`, and `tasks.md`. |
+| Rollback boundary | Revert the five `apps/web/package.json` devDependency entries, their `pnpm-lock.yaml` importer/package/snapshot records, and this PR3 traceability. No unrelated behavior, harness, or source file is removed. |
+
+### Size, Cleanup, and Process Evidence
+
+- Against exact parent `chore/pnpm-lock-normalization` (`2481b1a`), the generated lockfile delta is `+442 -0` (442 changed lines); the authored manifest delta is `+5 -0` (5 changed lines). The generated-only exception is valid; no native dependency delta exceeds the 600-line maximum.
+- The first compatibility assertion probe exited 1 because it incorrectly looked for `node_modules/.pnpm` relative to `apps/web`; it made no repository mutation and left no process. The corrected probe resolved package entry points upward to their matching package manifests and exited 0. A first final accounting probe then exited 127 after its frozen/convergence checks because a zsh variable named `path` shadowed `PATH`; its temporary witness was removed explicitly with `rm`, and the corrected `file_path` probe passed.
+- `pnpm`/`tsx` commands completed; `pgrep -fl 'tsx|next dev|next start|playwright|pnpm'` returned no owned process after verification. Temporary lock witnesses were removed by exit trap or explicit cleanup; no repository cleanup or revert was required.
+- No `gentle-ai sdd-attempt` command was called. Native attempt generation `8`, ordinal `8`, remains owned by the orchestrator; max attempts `1`, native maximum `600` changed lines.
+- Evidence revision: `sha256:3074b70d1a401978b232e4e5185e078dbf79a0be611407cbaeccd5d639e5d30e`, derived deterministically from exact parent/branch, lock SHA-256, generated/authored counts, changed paths, completed tasks, and passing verification facts.
