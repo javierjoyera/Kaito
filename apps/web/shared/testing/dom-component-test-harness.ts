@@ -21,7 +21,10 @@ export async function withDomComponentTest(
 	});
 	const window = globalThis.window;
 	const document = globalThis.document;
-	globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+	const reactActEnvironment = globalThis as typeof globalThis & {
+		IS_REACT_ACT_ENVIRONMENT?: boolean;
+	};
+	reactActEnvironment.IS_REACT_ACT_ENVIRONMENT = true;
 	let cleanup: (() => void) | undefined;
 
 	try {
@@ -71,8 +74,10 @@ function sameDescriptor(
 	left: PropertyDescriptor | undefined,
 	right: PropertyDescriptor,
 ): boolean {
+	if (!left) return false;
+
 	return (
-		left?.configurable === right.configurable &&
+		left.configurable === right.configurable &&
 		left.enumerable === right.enumerable &&
 		left.writable === right.writable &&
 		Object.is(left.value, right.value) &&
