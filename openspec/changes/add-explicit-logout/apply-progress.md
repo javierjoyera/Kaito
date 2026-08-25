@@ -193,3 +193,31 @@ No executable production behavior is introduced, so a fabricated RED test would 
 - `pnpm`/`tsx` commands completed; `pgrep -fl 'tsx|next dev|next start|playwright|pnpm'` returned no owned process after verification. Temporary lock witnesses were removed by exit trap or explicit cleanup; no repository cleanup or revert was required.
 - No `gentle-ai sdd-attempt` command was called. Native attempt generation `8`, ordinal `8`, remains owned by the orchestrator; max attempts `1`, native maximum `600` changed lines.
 - Evidence revision: `sha256:3074b70d1a401978b232e4e5185e078dbf79a0be611407cbaeccd5d639e5d30e`, derived deterministically from exact parent/branch, lock SHA-256, generated/authored counts, changed paths, completed tasks, and passing verification facts.
+
+## PR4 `functional DOM harness` strict-TDD completion (generation 9, ordinal 9)
+
+**Status:** complete. Work unit `pr4-functional-dom-harness` adds Node-only DOM component-test lifecycle infrastructure and no product imports or runtime feature behavior.
+
+### TDD Cycle Evidence — PR4
+
+| Task | Test file / layer | Safety Net | RED | GREEN | TRIANGULATE | REFACTOR | Outcome |
+|---|---|---|---|---|---|---|---|
+| 4.1 | `shared/testing/dom-component-test-harness.test.tsx` / Node DOM integration | `pnpm test:web-auth` → exit 0; 113 pass, 0 fail | `pnpm --filter web exec tsx --test shared/testing/dom-component-test-harness.test.tsx` → exit 1; module `./dom-component-test-harness` absent; 0 pass, 1 fail | Same command → exit 0; 2 pass, 0 fail | Independent lifecycle cases prove isolated body/focus/storage/user-event/window behavior and failure-path root/global/act restoration | Dynamic Testing Library imports occur only after JSDOM installation; same focused command remained 2/2 and removed React's import-time DOM fallback | Complete |
+| 4.2 | Same Node DOM integration test | Same 113/113 baseline before `package.json` edit | N/A — depends on task 4.1's absent-module RED | `pnpm test:web-auth` → exit 0; 115 pass, 0 fail; `.test.tsx` globs include the harness | Script extension is independently proven by the 115-test auth command | Targeted `eslint --fix` completed with no reported changes; focused and full auth tests remained green | Complete |
+
+### Work Unit Evidence — PR4
+
+| Evidence | Result |
+|---|---|
+| Focused test command and exact result | `pnpm --filter web exec tsx --test shared/testing/dom-component-test-harness.test.tsx` → exit 0; 2 pass, 0 fail. |
+| Runtime harness command/scenario and exact result | Same focused command → exit 0; rendered a React input, awaited bound `user-event` focus/type operations, used loopback body/localStorage, then proved a second DOM had no body/storage/window carry-over and a thrown callback still unmounted its React root and restored `window`, `document`, and `IS_REACT_ACT_ENVIRONMENT`. |
+| Normalization | `pnpm --filter web exec eslint shared/testing/dom-component-test-harness.ts shared/testing/dom-component-test-harness.test.tsx --fix --max-warnings=0` → exit 0; no output. |
+| Rollback boundary | Remove `apps/web/shared/testing/dom-component-test-harness.ts`, its `.test.tsx`, the two `.test.tsx` test-script glob arguments, and this PR4 traceability; no production component, route, provider, CSS, or navigation behavior is affected. |
+
+### Size, Cleanup, and Native Context
+
+- Feature-branch-chain child `feat/explicit-logout-harness-pr3` starts at immediate parent `chore/explicit-logout-dom-test-dependencies` (`e9471ba`); the stale local branch had no unique commits and was safely aligned before work. Historical `feat/explicit-logout-harness` was not used.
+- Candidate changed lines against `e9471ba`: `+196 -3 = 199`; all five paths are limited to the harness test, harness source, auth test script, task checkboxes, and cumulative apply-progress.
+- `git diff --check e9471ba` completed with exit 0. No temporary files were created; `pgrep -fl 'tsx|next dev|next start|playwright|pnpm'` returned no owned process (exit 1, expected for no matches).
+- Evidence revision: `sha256:83c24be8ed6af95e420b37963d021dd73f5f7e9fef0443eb4c13739662b99d0e`, derived from generation/ordinal, exact base/branch, completed tasks, final diff/path set, focused/full test facts, normalization, diff-check, and process status.
+- No `gentle-ai sdd-attempt` command was called. Native attempt generation `9`, ordinal `9`, work unit `pr4-functional-dom-harness`, maximum attempts `1`, and native maximum `400` changed lines remain orchestrator-owned.
