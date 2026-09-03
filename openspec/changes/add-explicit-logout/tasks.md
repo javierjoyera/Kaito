@@ -43,8 +43,8 @@ Tracker `feat/explicit-logout` is draft/no-merge. Chain: `PR1 auth → PR2 norma
 - [x] 4.2 GREEN `apps/web/shared/testing/dom-component-test-harness.ts`; extend `test:auth` to `.test.tsx`; preserve restoration/cleanup semantics; under 400 lines.
 
 ## Phase 5: Control (PR5)
-- [ ] 5.1 RED rendered tests for roles, awaited events, single-flight, pending/error, rejection/throw, retry, focus.
-- [ ] 5.2 GREEN `apps/web/features/auth/_components/logout-control.tsx` with injected use case, `aria-busy`, retry focus.
+- [x] 5.1 RED rendered tests for roles, awaited events, single-flight, pending/error, rejection/throw, retry, focus.
+- [x] 5.2 GREEN `apps/web/features/auth/_components/logout-control.tsx` with injected use case, `aria-busy`, retry focus.
 
 ## Phase 6: Surface (PR6)
 - [ ] 6.1 RED→GREEN footer mount in `active-plan-dashboard.tsx` plus responsive/focus/state CSS.
