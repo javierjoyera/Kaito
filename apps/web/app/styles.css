@@ -1485,6 +1485,57 @@ p {
 	padding: clamp(2rem, 4vw, 4rem);
 }
 
+.plan-logout-footer {
+	width: min(100%, 75rem);
+	margin: 0 auto;
+	border-top: 1px solid rgb(31 70 60 / 12%);
+	padding: 1.5rem clamp(2rem, 4vw, 4rem) 2.5rem;
+}
+
+.plan-logout-footer > div {
+	display: grid;
+	justify-items: start;
+	gap: 0.6rem;
+}
+
+.plan-logout-footer button {
+	min-height: 2.8rem;
+	border: 1px solid #2f5d50;
+	border-radius: 0.7rem;
+	background: transparent;
+	color: #1f463c;
+	cursor: pointer;
+	font: inherit;
+	font-weight: 800;
+	padding: 0.7rem 1.1rem;
+	transition: background-color 160ms ease, color 160ms ease;
+}
+
+.plan-logout-footer button:hover:not(:disabled) {
+	background: #e6efe9;
+}
+
+.plan-logout-footer button:focus-visible {
+	outline: 3px solid #e8893a;
+	outline-offset: 3px;
+}
+
+.plan-logout-footer button:disabled {
+	cursor: not-allowed;
+	opacity: 0.72;
+}
+
+.plan-logout-footer [role="status"],
+.plan-logout-footer [role="alert"] {
+	font-size: 0.9375rem;
+	font-weight: 700;
+}
+
+.plan-logout-footer [role="alert"] {
+	border-left: 3px solid var(--color-error);
+	padding-left: 0.75rem;
+}
+
 .plan-header p,
 .plan-header span {
 	color: #857d72;

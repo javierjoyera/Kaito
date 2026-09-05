@@ -4,7 +4,9 @@ import { useCallback, useEffect, useState, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
 
 import { getAccessToken } from "../../auth/_adapters/get-access-token";
-import { getBrowserSupabaseClient } from "../../auth/_infrastructure/supabase/browser";
+import { browserSignOut } from "../../auth/_adapters/browser-sign-out";
+import { LogoutControl } from "../../auth/_components/logout-control";
+import { createExplicitLogout } from "../../auth/_use-cases/explicit-logout";
 import { createSessionRecoveryController } from "../../auth/_use-cases/session-recovery-controller";
 import { PrivateApiError } from "../../../shared/adapters/private-fetch";
 import { isTestAuthAdapterEnabledInBrowser } from "../../../shared/testing/test-auth-adapter";
@@ -32,6 +34,8 @@ const approachNames = {
 	mode_z: "Mode Z",
 	kaioken: "Kaioken",
 };
+
+const explicitLogout = createExplicitLogout(browserSignOut);
 
 export function ActivePlanDashboard() {
 	const router = useRouter();
@@ -89,12 +93,7 @@ function isRecoverableSessionError(
 }
 
 async function signOut() {
-	if (isTestAuthAdapterEnabledInBrowser()) {
-		document.cookie =
-			"kaito-e2e-session=; Path=/; Max-Age=0; SameSite=Lax";
-		return;
-	}
-	await getBrowserSupabaseClient()?.auth.signOut();
+	await browserSignOut();
 }
 
 function DashboardStatus({
@@ -208,6 +207,12 @@ function Plan({ plan }: { plan: ActiveTrainingPlan }) {
 					<PlanCalendar sessions={sessions} />
 				)}
 			</div>
+			<footer className="plan-logout-footer">
+				<LogoutControl
+					logout={explicitLogout}
+					onSuccess={() => window.location.replace("/login")}
+				/>
+			</footer>
 		</main>
 	);
 }
