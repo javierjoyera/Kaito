@@ -9,7 +9,7 @@
     "lint": "eslint . --max-warnings=0",
     "test:sentry-scrubbing": "tsx --test lib/sentry-scrubbing.test.ts",
     "test:health": "tsx --test app/health/route.test.ts",
-    "test:auth": "tsx --test \"features/auth/**/*.test.ts\" \"shared/**/*.test.ts\"",
+		"test:auth": "tsx --test \"features/auth/**/*.test.ts\" \"features/auth/**/*.test.tsx\" \"shared/**/*.test.ts\" \"shared/**/*.test.tsx\"",
     "test:onboarding": "tsx --test \"features/onboarding/**/*.test.ts\"",
     "test:e2e": "playwright test && playwright test --config=playwright.production.config.ts",
     "test:e2e:install": "playwright install chromium"
@@ -24,11 +24,16 @@
   },
   "devDependencies": {
     "@playwright/test": "1.55.1",
+    "@testing-library/dom": "10.4.1",
+    "@testing-library/react": "16.3.2",
+    "@testing-library/user-event": "14.6.6",
     "@types/node": "24.10.1",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
     "eslint": "9.39.1",
     "eslint-config-next": "16.2.10",
+    "global-jsdom": "29.0.0",
+    "jsdom": "29.1.1",
     "tsx": "^4.22.4",
     "typescript": "5.9.3"
   }

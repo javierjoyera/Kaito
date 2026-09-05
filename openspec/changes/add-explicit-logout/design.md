@@ -2,79 +2,60 @@
 
 ## Chosen Architecture
 
-Add a browser adapter, provider-neutral use case, and accessible client control; compose them only in `ActivePlanDashboard`. This follows Kaito's auth boundaries (`_adapters` translate, `_use-cases` normalize, `_components` interact) without inventing a private shell. Like a race checkpoint, the adapter reads timing, the use case confirms checkout, and the dashboard chooses the next marker.
+Preserve the delivered auth boundary, product behavior, runtime architecture, DOM harness contract, and test semantics. After PR2 lockfile normalization, insert a dependency-bootstrap child before the functional harness. The compatible Node v24.18.0 set is `jsdom@29.1.1`, `global-jsdom@29.0.0`, `@testing-library/react@16.3.2`, `@testing-library/dom@10.4.1`, and `@testing-library/user-event@14.6.6`.
 
-## Proposed File and Symbol Map
+## Architecture Decisions
 
-| File / symbol | Responsibility and dependencies | Explicit non-responsibility |
+| Option | Tradeoff | Decision |
 |---|---|---|
-| `apps/web/features/auth/_adapters/browser-sign-out.ts` — `createBrowserSignOutAdapter` | Under the existing test gate clear `kaito-e2e-session`; otherwise call cached Supabase `auth.signOut`; map missing client/error to `{ ok: false }`. | UI, retry, navigation, recovery policy. |
-| `apps/web/features/auth/_use-cases/explicit-logout.ts` — `ProviderSignOutAdapter`, `ProviderSignOutResult`, `LogoutOutcome`, `ExplicitLogout`, `createExplicitLogout` | Convert adapter result or thrown exception into `success | error`; never leak provider data. | Single-flight, focus, copy, navigation. |
-| `apps/web/features/auth/_components/logout-control.tsx` — `LogoutControl` | Receive `logout` and `onSuccess`; own idle/pending/error state, ref-based single-flight, semantic feedback, retry, and focus. | Supabase, cookies, destination choice. |
-| `apps/web/features/planning/_components/active-plan-dashboard.tsx` — `ActivePlanDashboard`, `Plan`, `DashboardSidebar` | Compose dependencies, mount in a sidebar footer below metadata, and on success call `window.location.replace("/login")`. | Other surfaces/guard redesign. |
-| `onboarding-wizard.tsx`, `plan-generation.tsx`, `active-plan-dashboard.tsx` | Replace duplicated recovery sign-out helpers with the adapter, ignoring its result through recovery's `Promise<void>` callback. | Confirmed-success recovery semantics. |
-| `apps/web/app/styles.css` | Add `.logout-control`/sidebar-footer responsive, focus, error, pending rules beside plan-sidebar CSS. | Design-system extraction. |
-| `browser-sign-out.test.ts`, `explicit-logout.test.ts`, `session-recovery-controller.test.ts` | Adapter equivalence, normalization, recovery regression. | Route behavior. |
-| `apps/web/e2e/active-plan-dashboard.spec.ts`, `session-flow.spec.ts` | Placement, interaction, failure/focus, full navigation, cookie and private-route safety. | Provider internals. |
+| Dependency bootstrap before the harness | Adds one child, but isolates generated dependency churn from authored test infrastructure | Chosen. PR3 contains the five manifest additions and canonical lockfile delta; PR4 keeps the functional harness below 400 changed lines. |
+| Dependency and RED harness together | Fewer children, but the measured `+514` diff exceeds the 400-line child budget and obscures review boundaries | Rejected; the blocked attempt was reverted. |
+| Dependency `size:exception` | PR3 is `+447` (`apps/web/package.json +5`, `pnpm-lock.yaml +442`) | Approved only for the generated `pnpm-lock.yaml` delta. Authored manifest and traceability work remain review-bounded. |
+| Node/tsx DOM component harness | Adds lifecycle infrastructure but proves the control independently | Preserved without Jest, Vitest, happy-dom, or jest-dom. |
+| Provider calls or shared private layout | Less wiring, but leaks provider mechanics or expands scope | Rejected; preserve `_adapters` → `_use-cases` → `_components`, with dashboard-owned navigation. |
 
-## Dependency and Sequences
+The split improves reviewability because dependency provenance and generated resolution can be reviewed separately from harness behavior. It also narrows rollback: PR3 can remove only test dependencies, while PR4 can remove only the harness without regenerating or disturbing unrelated functional code.
 
-```text
-ActivePlanDashboard -> LogoutControl -> createExplicitLogout -> ProviderSignOutAdapter
-                                                       -> Supabase | gated E2E cookie
+## DOM Harness Contract (PR4)
 
-success: activate -> pending -> adapter ok -> success callback -> location.replace(/login) -> server guard
-failure: activate -> pending -> error/throw -> alert -> focus retry button -> retryable idle
-recovery: private API auth error -> shared adapter attempt (outcome ignored/throw swallowed)
-         -> router.replace(/login?returnTo=...) regardless
-```
+`apps/web/shared/testing/dom-component-test-harness.ts` remains Node-only: component test → harness → JSDOM/Testing Library, never production imports. Per non-concurrent test, create a loopback DOM, install globals, set/restore `IS_REACT_ACT_ENVIRONMENT`, and bind user-event to its document. In `finally`, `cleanup()` unmounts roots; body, storage, globals, act state, and window are restored or closed, including failures.
 
-Navigation belongs to dashboard/control composition because destination and history replacement are surface policy. In the adapter it couples provider translation to routes; in the use case it couples auth flow to browser navigation. Like checkout confirmation versus choosing the route home, they are separate decisions.
+Keep `tsx --test`; extend `test:auth` to `.test.tsx`. Tests retain wrapper-local queries, awaited user-event/`act`, deferred promises, Node `assert`, and `document.activeElement`; no runner-global hooks, `screen` import-order assumptions, Jest matchers, or fake timers.
 
-## Resolved Contracts and Decisions
+## Exact Chain Revision and File Map
 
-```ts
-type ProviderSignOutResult = { ok: true } | { ok: false };
-type LogoutOutcome = { status: "success" } | { status: "error" };
-```
+`PR1 auth → PR2 normalization → PR3 dependency bootstrap → PR4 harness → PR5 control → PR6 surface → PR7 safety → tracker → main`.
 
-The use case catches every exception as `error`. A synchronous control ref—not React state/use case—rejects duplicates. Pending uses a disabled `aria-busy` button and `role="status"`. Failure shows `role="alert"` (“No hemos podido cerrar tu sesión. Inténtalo de nuevo.”), enables/focuses the same button as “Reintentar cierre de sesión,” and retry clears the alert before one fresh operation. Gated E2E uses a consumed `sessionStorage` fail-once value; success clears the session cookie.
+The strategy remains `feature-branch-chain`: every child targets its immediate parent, and the tracker stays draft/no-merge. PR3 uses explicit conventional branch `chore/explicit-logout-dom-test-dependencies`, targeting `chore/pnpm-lock-normalization`. PR4 uses the current clean `feat/explicit-logout-harness-pr3`, targeting PR3. Historical `feat/explicit-logout-harness` is not reusable.
 
-## Rejected Alternatives
-
-| Alternative | Rejection |
+| PR | Repository content |
 |---|---|
-| Direct Supabase component call | Leaks provider/test mechanics. |
-| Global service | Hides ownership; adds mutable cross-surface lifecycle. |
-| Shared private layout | Changes composition/loading/guards for one control. |
-| Changed recovery semantics | Could strand invalid sessions; recovery remains best-effort evacuation. |
+| PR1 | Existing auth adapter/use-case and recovery consumers/tests; unchanged. |
+| PR2 | Canonical `pnpm-lock.yaml`; unchanged normalization boundary. |
+| PR3 | `apps/web/package.json`, dependency-only `pnpm-lock.yaml`, bounded OpenSpec traceability. No source, harness, or behavior. |
+| PR4 | Test script and `shared/testing/dom-component-test-harness{,.test}.tsx`. |
+| PR5 | `auth/_components/logout-control{,.test}.tsx`: single-flight, pending/error, retry/focus. |
+| PR6 | `active-plan-dashboard.tsx`, `app/styles.css`, dashboard E2E: placement and exclusions. |
+| PR7 | `auth/_adapters/browser-sign-out{,.test}.ts`, `active-plan-dashboard.tsx`, `e2e/session-flow.spec.ts`: adapter-contained loopback/non-production fail-once seam, confirmed navigation, and private-history safety. |
 
-## Scenario-to-Proof Map
+## PR6 Evidence Allocation
 
-| Spec scenarios | Boundary | RED proof |
-|---|---|---|
-| Surface limit; keyboard activation | Dashboard/control | Playwright `/plan`, `/onboarding`, `/plan/generating` |
-| Double activation; pending observable | Control | Playwright delayed adapter/call count |
-| Success; private history safety | Dashboard + existing page guards | Playwright navigation, back, refresh, direct routes |
-| Rejection/throw; retry success | Use case/control | Node normalization tests + Playwright fail-once/focus |
-| Adapter equivalence | Adapter contract | Node Supabase/E2E cases |
-| Recovery regression | Recovery controller/wiring | Node rejection test + existing route-recovery E2E |
-| Semantic status/focus | Control/CSS | Playwright role, text, focus, non-color assertions |
+The current E2E auth adapter resolves synchronously with success, so it cannot honestly produce browser pending, failure, or retry behavior within PR6. The maintainer-approved allocation is therefore:
+
+- PR5 DOM tests remain the proof for pending, single-flight, rejection/throw normalization, retry, error clearing, and deterministic retry focus at the component boundary.
+- PR6 Playwright proof covers the footer placement, `/onboarding` and `/plan/generating` exclusions, responsive and accessible integration, and keyboard activation through the existing synchronous E2E adapter.
+- PR7 owns browser failure/retry plus confirmed navigation, session, history, and direct-route safety. Its loopback/non-production test adapter consumes a one-time URL-fragment signal inside `browser-sign-out.ts`, returns failure without clearing the test session or requesting Supabase, then permits the ordinary successful retry. Components and Playwright do not manipulate that signal through cookies. PR6's `onSuccess` intentionally performs no navigation.
+
+## Contracts, Proof, and Rollback
+
+`ProviderSignOutResult` remains `{ok:true}|{ok:false}`; `LogoutOutcome` remains `success|error`. Pending, alert copy, retry focus, confirmed-only `location.replace("/login")`, once-only navigation, adapter equivalence, and best-effort recovery remain unchanged and are proven in PR5–PR7. The PR7 fail-once seam is confined to the adapter's already-gated loopback/non-production test mode; it is not part of the use-case or component contracts.
+
+PR3 review verifies exact versions, importer entries, lockfile provenance, and frozen-install compatibility. Its exception excludes authored manifest/traceability lines and becomes invalid if source, harness, runtime, or behavioral tests appear. Revert PR3 to remove only DOM test dependencies; revert PR4 to remove only harness infrastructure. No migration or feature flag.
 
 ## Threat Matrix
 
-Browser navigation is applicable, but the supplied matrix concerns shell/VCS boundaries:
+N/A — no routing, shell, subprocess, VCS/PR automation, executable-file classification, or process-integration boundary is implemented. The chain is a delivery constraint, not application automation.
 
-| Boundary | Applicability / response | RED tests |
-|---|---|---|
-| Documentation-like paths | N/A — no classification/execution | None |
-| Git repository selection | N/A — no Git | None |
-| Commit state | N/A — no commits | None |
-| Push state | N/A — no push | None |
-| PR commands | N/A — no PR automation | None |
+## Open Questions
 
-Route safety is covered by the scenario proofs above.
-
-## Migration, Rollback, and Phase Boundary
-
-No migration/flag. Later order: RED contracts, adapter/use case, control, dashboard/recovery, CSS/E2E; rollback reverses it without changing guards/controller. Before verification record worktree bytes: `next build` may normalize `apps/web/next-env.d.ts`; classify separately and restore unrelated pre-verification bytes. These are design decisions; `sdd-tasks` schedules work later. No open questions.
+None.
