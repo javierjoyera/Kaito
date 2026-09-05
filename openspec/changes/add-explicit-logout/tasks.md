@@ -32,9 +32,9 @@ Dependency: `📍 PR1 auth` → `PR2 control` → `PR3 surface` → `PR4 safety`
 Every child keeps its RED proof beside the behavior it introduces; PR4 is not a tests-only delivery. If any estimate exceeds 400 lines, split that child before apply (no silent exception).
 
 ## Phase 1: Auth boundary (PR1)
-- [ ] 1.1 RED adapter equivalence/missing-client/error tests; add `browser-sign-out.ts` mapping Supabase and gated `kaito-e2e-session` to `{ok:true|false}`.
-- [ ] 1.2 RED rejection/throw tests; add `explicit-logout.ts` contracts and exception normalization.
-- [ ] 1.3 RED recovery regression; replace duplicated helpers in `onboarding-wizard.tsx`, `plan-generation.tsx`, and dashboard while preserving best-effort redirect.
+- [x] 1.1 RED adapter equivalence/missing-client/error tests; add `browser-sign-out.ts` mapping Supabase and gated `kaito-e2e-session` to `{ok:true|false}`.
+- [x] 1.2 RED rejection/throw tests; add `explicit-logout.ts` contracts and exception normalization.
+- [x] 1.3 Existing-behavior refactor: before production edits, run the Safety Net and add approval/characterization tests for recovery in `session-recovery-controller.test.ts`; require those tests to pass before and after reusing the adapter in duplicated helpers across `onboarding-wizard.tsx`, `plan-generation.tsx`, and the dashboard, with focused regression proof that best-effort redirect is unchanged. No RED is expected because observable behavior does not change; this follows the strict-TDD approval-testing branch, not a TDD bypass.
 
 ## Phase 2: Control (PR2)
 - [ ] 2.1 RED pending/double-activation/failure/retry/status/focus tests; add `logout-control.tsx` single-flight, `aria-busy`, alert, retry, and focus.

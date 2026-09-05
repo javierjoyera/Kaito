@@ -19,7 +19,7 @@ describe("createSessionRecoveryController", () => {
 			"/login?returnTo=%2Ftraining%3Fweek%3D2",
 		]);
 	});
-	it("still navigates to login when sign-out rejects", async () => {
+	it("still redirects auth_required recovery when sign-out rejects", async () => {
 		const calls: string[] = [];
 		const controller = createSessionRecoveryController({
 			currentPath: "/training",
@@ -30,6 +30,23 @@ describe("createSessionRecoveryController", () => {
 		});
 		await controller.recover("auth_required");
 		assert.deepEqual(calls, ["/login?returnTo=%2Ftraining"]);
+	});
+
+	it("still redirects auth_rejected recovery to its selected destination when sign-out rejects", async () => {
+		const calls: string[] = [];
+		const controller = createSessionRecoveryController({
+			currentPath: "/plan/generating?plan_id=next",
+			signOut: async () => {
+				throw new Error("provider failure");
+			},
+			replace: (destination) => calls.push(destination),
+		});
+
+		await controller.recover("auth_rejected");
+
+		assert.deepEqual(calls, [
+			"/login?returnTo=%2Fplan%2Fgenerating%3Fplan_id%3Dnext",
+		]);
 	});
 
 	it("does not clear a session or navigate for a system-unavailable failure", async () => {
