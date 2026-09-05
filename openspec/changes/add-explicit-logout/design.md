@@ -2,76 +2,52 @@
 
 ## Chosen Architecture
 
-Preserve the delivered auth boundary and approved DOM harness, control, surface, and safety slices. Insert a pnpm 11 normalization child after PR1 so dependency selection is measured without a 5.5K–5.8K-line formatting rewrite. Like resurfacing the track before timing runners, normalization makes later measurements meaningful without changing the course.
+Preserve the delivered auth boundary, product behavior, runtime architecture, DOM harness contract, and test semantics. After PR2 lockfile normalization, insert a dependency-bootstrap child before the functional harness. The compatible Node v24.18.0 set is `jsdom@29.1.1`, `global-jsdom@29.0.0`, `@testing-library/react@16.3.2`, `@testing-library/dom@10.4.1`, and `@testing-library/user-event@14.6.6`.
 
 ## Architecture Decisions
 
 | Option | Tradeoff | Decision |
 |---|---|---|
-| Standalone canonicalization PR | One extra chain child; isolates a huge generated diff | Chosen as PR2, branch `chore/pnpm-lock-normalization`, targeting `feat/explicit-logout-auth`, with generated-file `size:exception`. |
-| Normalize while adding DOM dependencies | Fewer PRs, but hides dependency changes inside unrelated churn | Rejected. PR2 changes only `pnpm-lock.yaml`; OpenSpec traceability may accompany it, but no manifests, dependencies, source, or tests. |
-| `jsdom@29` + `global-jsdom@29` versus `jsdom@30` + manual globals | Convenience/compatibility versus newer JSDOM/manual lifecycle control | Deferred until post-normalization install measurement. |
-| Node/tsx DOM component harness | Adds test dependencies/lifecycle but proves an unmounted component | Preserved. No Jest, Vitest, happy-dom, or jest-dom. |
-| Merge harness/control or use Playwright only | Smaller chain, but mixes infrastructure/behavior or cannot prove the control independently | Rejected; preserve autonomous review and rollback boundaries. |
-| Direct Supabase UI call/global service/shared private layout/changed recovery semantics | Less wiring, but leaks provider mechanics or alters route/recovery policy | Rejected; preserve `_adapters` → `_use-cases` → `_components`, with navigation owned by the dashboard. |
+| Dependency bootstrap before the harness | Adds one child, but isolates generated dependency churn from authored test infrastructure | Chosen. PR3 contains the five manifest additions and canonical lockfile delta; PR4 keeps the functional harness below 400 changed lines. |
+| Dependency and RED harness together | Fewer children, but the measured `+514` diff exceeds the 400-line child budget and obscures review boundaries | Rejected; the blocked attempt was reverted. |
+| Dependency `size:exception` | PR3 is `+447` (`apps/web/package.json +5`, `pnpm-lock.yaml +442`) | Approved only for the generated `pnpm-lock.yaml` delta. Authored manifest and traceability work remain review-bounded. |
+| Node/tsx DOM component harness | Adds lifecycle infrastructure but proves the control independently | Preserved without Jest, Vitest, happy-dom, or jest-dom. |
+| Provider calls or shared private layout | Less wiring, but leaks provider mechanics or expands scope | Rejected; preserve `_adapters` → `_use-cases` → `_components`, with dashboard-owned navigation. |
 
-## DOM Harness Decision (PR3)
+The split improves reviewability because dependency provenance and generated resolution can be reviewed separately from harness behavior. It also narrows rollback: PR3 can remove only test dependencies, while PR4 can remove only the harness without regenerating or disturbing unrelated functional code.
 
-`apps/web/shared/testing/dom-component-test-harness.ts` remains Node-only: component test → harness → JSDOM/Testing Library, never production imports. Per non-concurrent test, create a loopback DOM, install globals, set/restore `IS_REACT_ACT_ENVIRONMENT`, and bind user-event to its document. In `finally`, `cleanup()` unmounts roots; body/storage/globals/act state restore and the window closes, including failures.
+## DOM Harness Contract (PR4)
 
-Keep `tsx --test`; extend `test:auth` to `.test.tsx`. Tests use wrapper-local render queries, awaited user-event/`act`, deferred logout promises, Node `assert`, and `document.activeElement`; no runner-global hooks, `screen` import-order assumptions, Jest matchers, or fake timers. The harness owns no dashboard, CSS, route, navigation, provider simulation, or production abstraction.
+`apps/web/shared/testing/dom-component-test-harness.ts` remains Node-only: component test → harness → JSDOM/Testing Library, never production imports. Per non-concurrent test, create a loopback DOM, install globals, set/restore `IS_REACT_ACT_ENVIRONMENT`, and bind user-event to its document. In `finally`, `cleanup()` unmounts roots; body, storage, globals, act state, and window are restored or closed, including failures.
 
-## Chain and File Map
+Keep `tsx --test`; extend `test:auth` to `.test.tsx`. Tests retain wrapper-local queries, awaited user-event/`act`, deferred promises, Node `assert`, and `document.activeElement`; no runner-global hooks, `screen` import-order assumptions, Jest matchers, or fake timers.
 
-`PR1 auth → PR2 normalization → PR3 harness → PR4 control → PR5 surface → PR6 safety → tracker → main`. Every child targets its immediate predecessor; PR3 `feat/explicit-logout-harness` targets `chore/pnpm-lock-normalization`.
+## Exact Chain Revision and File Map
+
+`PR1 auth → PR2 normalization → PR3 dependency bootstrap → PR4 harness → PR5 control → PR6 surface → PR7 safety → tracker → main`.
+
+The strategy remains `feature-branch-chain`: every child targets its immediate parent, and the tracker stays draft/no-merge. PR3 uses explicit conventional branch `chore/explicit-logout-dom-test-dependencies`, targeting `chore/pnpm-lock-normalization`. PR4 uses the current clean `feat/explicit-logout-harness-pr3`, targeting PR3. Historical `feat/explicit-logout-harness` is not reusable.
 
 | PR | Repository content |
 |---|---|
-| PR1 | Existing `browser-sign-out.ts`, `explicit-logout.ts`, recovery consumers/tests; unchanged. |
-| PR2 | Canonical `pnpm-lock.yaml` only; optional OpenSpec traceability. |
-| PR3 | `apps/web/package.json`, minimal dependency lockfile delta, test script, `shared/testing/dom-component-test-harness{,.test}.tsx`. |
-| PR4 | `auth/_components/logout-control{,.test}.tsx`: injected use case, single-flight, pending/error, retry/focus. |
-| PR5 | `active-plan-dashboard.tsx`, `app/styles.css`, `e2e/active-plan-dashboard.spec.ts`: mount, styling, approved/excluded surfaces. |
-| PR6 | `active-plan-dashboard.tsx`, `e2e/session-flow.spec.ts`: confirmed `location.replace("/login")`, history/private-route safety. |
-
-## Lockfile Normalization Proof and Review
-
-From a clean PR2 worktree with unchanged manifests:
-
-```sh
-test "$(pnpm --version)" = "11.0.0"
-pnpm list -r --lockfile-only --json --depth Infinity | jq -S -c . | shasum -a 256 > "$TMPDIR/kaito-graph.before.sha256"
-pnpm install --lockfile-only
-pnpm list -r --lockfile-only --json --depth Infinity | jq -S -c . | shasum -a 256 > "$TMPDIR/kaito-graph.after.sha256"
-cmp "$TMPDIR/kaito-graph.before.sha256" "$TMPDIR/kaito-graph.after.sha256"
-cp pnpm-lock.yaml "$TMPDIR/kaito-pnpm-lock.canonical.yaml"
-pnpm install --frozen-lockfile --lockfile-only
-pnpm install --lockfile-only
-cmp pnpm-lock.yaml "$TMPDIR/kaito-pnpm-lock.canonical.yaml"
-git diff --exit-code -- package.json apps/web/package.json packages/api-client/package.json
-git diff --name-only | while IFS= read -r p; do case "$p" in pnpm-lock.yaml|openspec/changes/add-explicit-logout/*) ;; *) exit 1;; esac; done
-```
-
-Allow only the lockfile and declared OpenSpec traceability paths. Review provenance, graph-hash equality, lockfile header, importer identities/counts, package/snapshot counts, and second-run convergence—not 5K+ generated lines one by one.
-
-The `size:exception` covers generated lockfile normalization only. Any dependency, manifest, source, or test change invalidates it and blocks PR2.
+| PR1 | Existing auth adapter/use-case and recovery consumers/tests; unchanged. |
+| PR2 | Canonical `pnpm-lock.yaml`; unchanged normalization boundary. |
+| PR3 | `apps/web/package.json`, dependency-only `pnpm-lock.yaml`, bounded OpenSpec traceability. No source, harness, or behavior. |
+| PR4 | Test script and `shared/testing/dom-component-test-harness{,.test}.tsx`. |
+| PR5 | `auth/_components/logout-control{,.test}.tsx`: single-flight, pending/error, retry/focus. |
+| PR6 | `active-plan-dashboard.tsx`, `app/styles.css`, dashboard E2E: placement and exclusions. |
+| PR7 | `active-plan-dashboard.tsx`, `e2e/session-flow.spec.ts`: confirmed navigation and private-history safety. |
 
 ## Contracts, Proof, and Rollback
 
-`ProviderSignOutResult` remains `{ok:true}|{ok:false}`; `LogoutOutcome` remains `success|error`. A synchronous ref rejects duplicates. Pending remains disabled/`aria-busy` with `role="status"`; failure uses `role="alert"` (“No hemos podido cerrar tu sesión. Inténtalo de nuevo.”) and focuses “Reintentar cierre de sesión.” PR4 proves those contracts. PR5 proves placement/exclusions. PR6 preserves consumed fail-once `sessionStorage`, clears the E2E cookie on success, and proves confirmed-only `location.replace`, once-only navigation, and private-history safety. Recovery remains best-effort.
+`ProviderSignOutResult` remains `{ok:true}|{ok:false}`; `LogoutOutcome` remains `success|error`. Pending, alert copy, retry focus, confirmed-only `location.replace("/login")`, once-only navigation, adapter equivalence, and best-effort recovery remain unchanged and are proven in PR5–PR7.
 
-PR2 rollback is a revert of the normalization commit: manifests and logical dependency graph remain unchanged. Later slices stay independently reversible. No data migration or feature flag.
+PR3 review verifies exact versions, importer entries, lockfile provenance, and frozen-install compatibility. Its exception excludes authored manifest/traceability lines and becomes invalid if source, harness, runtime, or behavioral tests appear. Revert PR3 to remove only DOM test dependencies; revert PR4 to remove only harness infrastructure. No migration or feature flag.
 
 ## Threat Matrix
 
-| Boundary | Applicability | Response / RED tests |
-|---|---|---|
-| Documentation-like paths | N/A — no executable classification | None |
-| Git repository selection | N/A — no Git/process automation is implemented | Manual proof runs from the PR2 worktree |
-| Commit state | N/A — no commit tooling | None |
-| Push state | N/A — no push tooling | None |
-| PR commands | N/A — no PR automation | None |
+N/A — no routing, shell, subprocess, VCS/PR automation, executable-file classification, or process-integration boundary is implemented. The chain is a delivery constraint, not application automation.
 
 ## Open Questions
 
-- [ ] After canonicalization, which candidate produces the smaller compatible dependency delta: jsdom 29/global-jsdom 29 or jsdom 30/manual globals?
+None.

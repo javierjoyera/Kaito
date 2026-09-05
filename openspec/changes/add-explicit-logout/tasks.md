@@ -2,59 +2,54 @@
 
 ## Review Workload Forecast
 
-| Field | Value |
-|---|---|
-| Estimated changed lines | 5,500–6,000 generated lockfile lines plus 520–700 authored lines across six children |
-| 400-line budget risk | High; only PR2 has the approved generated-file exception |
-| Chained PRs recommended | Yes |
-| Suggested split | PR1 auth → PR2 lock normalization → PR3 harness → PR4 control-dom → PR5 surface → PR6 safety |
-| Delivery strategy | feature-branch-chain; `size:exception` only for PR2 canonical `pnpm-lock.yaml` |
+Estimated changed lines: +442 generated; 520–700 authored. PR3's narrow `size:exception` covers generated lockfile only; delivery remains `ask-on-risk`.
 
 Decision needed before apply: No
 Chained PRs recommended: Yes
 Chain strategy: feature-branch-chain
 400-line budget risk: High
 
-Tracker `feat/explicit-logout` stays draft/no-merge. Branches: PR1 `feat/explicit-logout-auth` (complete) → PR2 `chore/pnpm-lock-normalization` → PR3 `feat/explicit-logout-harness` → PR4 `feat/explicit-logout-control-dom` → PR5 `feat/explicit-logout-surface` → PR6 `feat/explicit-logout-safety`; each targets its immediate parent. 📍 Current checkout `chore/pnpm-lock-normalization` is PR2 normalization targeting `feat/explicit-logout-auth`; do not reuse the historical harness branch for PR2 or perform Git operations. Historical `feat/explicit-logout-control` also remains untouched.
-
-Dependency: `PR1 auth` → `📍 PR2 normalization` → PR3 harness → PR4 control-dom → PR5 surface → PR6 safety → tracker → `main`. Normalization resurfaces the track before the harness measures the runners.
+Tracker `feat/explicit-logout` is draft/no-merge. Chain: `PR1 auth → PR2 normalization → PR3 dependency bootstrap → PR4 harness → PR5 control → PR6 surface → PR7 safety → tracker → main`. PR3 `chore/explicit-logout-dom-test-dependencies` base `chore/pnpm-lock-normalization`; PR4 `feat/explicit-logout-harness-pr3` base PR3. Historical `feat/explicit-logout-harness` is not reusable. 📍 PR3.
 
 ### Suggested Work Units
 
 | Unit | Focused proof | Runtime harness | Rollback boundary |
 |---|---|---|---|
-| PR1 auth (complete) | `pnpm test:web-auth` | N/A: no UI/route boundary | Auth adapter, use-case, recovery tests/wiring |
-| PR2 normalization | Hash, frozen/convergence, exact-path proof below | N/A: semantic graph/convergence is proportional; no runtime behavior | Revert only canonical `pnpm-lock.yaml`; no manifest/graph change |
-| PR3 harness | `pnpm test:web-auth` | N/A: isolated JSDOM lifecycle is the proof | Harness files, script, dependency manifest/lock delta |
-| PR4 control-dom | `pnpm test:web-auth` | N/A: rendered DOM proves interaction/focus | Logout control and tests |
-| PR5 surface | `pnpm test:web-auth && pnpm test:web-e2e` | Chromium dashboard/exclusions/keyboard/retry | Dashboard/CSS/surface E2E |
-| PR6 safety | `pnpm test:web-auth && pnpm test:web-e2e && pnpm lint:web && pnpm build:web` | Chromium success, cookie, history/direct-route/fail-once retry | Navigation/safety E2E and final wiring |
+| PR1 auth (complete) | `pnpm test:web-auth` | N/A: no UI/route | Auth boundary/tests |
+| PR2 normalization | Hash/frozen/convergence/path proof | N/A: no runtime | Canonical lockfile |
+| PR3 dependencies | Version/peer/engine/path/frozen proof | N/A: manifest/lock only | Manifest, lockfile, traceability |
+| PR4 harness | `pnpm test:web-auth` | N/A: lifecycle tests prove runtime boundary | Harness/script |
+| PR5 control | `pnpm test:web-auth` | N/A: DOM proves interaction/focus | Control/tests |
+| PR6 surface | `pnpm test:web-auth && pnpm test:web-e2e` | Chromium placement/exclusions/retry | Dashboard/CSS/E2E |
+| PR7 safety | `pnpm test:web-auth && pnpm test:web-e2e && pnpm lint:web && pnpm build:web` | Chromium success/history/direct-route/retry | Safety E2E/final wiring |
 
 ## Phase 1: Auth boundary (PR1)
-- [x] 1.1 Adapter equivalence/error RED→GREEN; add `browser-sign-out.ts` and gated E2E cookie mapping.
-- [x] 1.2 Rejection/throw RED→GREEN; add provider-neutral `explicit-logout.ts` normalization.
+- [x] 1.1 Adapter equivalence/error RED→GREEN; `browser-sign-out.ts`; gated E2E cookie mapping.
+- [x] 1.2 Rejection/throw RED→GREEN; provider-neutral `explicit-logout.ts`.
 - [x] 1.3 Approval-tested recovery refactor; preserve best-effort redirect.
 
 ## Phase 2: Standalone lockfile normalization (PR2)
-- [x] 2.1 Start from clean PR2 worktree and unchanged manifests; require pnpm `11.0.0`; hash `pnpm list -r --lockfile-only --json --depth Infinity | jq -S -c .` with SHA-256 before canonicalization.
-- [x] 2.2 Run pinned `pnpm install --lockfile-only` with no manifest/dependency/source/test changes; record header, importer, package, and snapshot counts when obtainable without new dependencies.
-- [x] 2.3 Hash the logical graph again and require equality; prove `pnpm install --frozen-lockfile --lockfile-only` then a second lockfile-only run converge byte-for-byte.
-- [x] 2.4 End with exact changed paths: canonical `pnpm-lock.yaml` only, plus declared OpenSpec traceability; reject source, manifests, dependency-graph, runtime, or component changes. `size:exception` is limited to this generated lockfile; PR3–PR6 inherit no exception.
+- [x] 2.1 Clean worktree/unchanged manifests; pnpm `11.0.0`; SHA-256 hash `pnpm list -r --lockfile-only --json --depth Infinity | jq -S -c .` before canonicalization.
+- [x] 2.2 Pinned `pnpm install --lockfile-only`; no manifest/dependency/source/test changes; record header/importer/package/snapshot counts.
+- [x] 2.3 Equal graph hash; frozen lockfile and second lockfile-only run converge byte-for-byte.
+- [x] 2.4 Paths: canonical lockfile plus OpenSpec traceability; reject source/manifests/graph/runtime/components. PR3 owns the exception; PR4–PR7 inherit none.
 
-## Phase 3: DOM harness (PR3)
-- [ ] 3.1 RED `dom-component-test-harness.test.tsx`: isolation, global/act restoration, cleanup after failure, focus/body/storage, and no leaked globals.
-- [ ] 3.2 GREEN `apps/web/shared/testing/dom-component-test-harness.ts`; add deferred DOM dependencies and extend `test:auth` to `.test.tsx`; keep this child ≤400 authored lines.
+## Phase 3: Dependency bootstrap (PR3)
+- [x] 3.1 Add only to `apps/web/package.json`, canonical `pnpm-lock.yaml`, and bounded traceability: `jsdom@29.1.1`, `global-jsdom@29.0.0`, `@testing-library/react@16.3.2`, `@testing-library/dom@10.4.1`, `@testing-library/user-event@14.6.6`; no source/harness/runtime behavior.
+- [x] 3.2 Prove exact versions, peers, engines, frozen-lock acceptance, exact paths, and measured +442 lockfile lines. `size:exception` is approved ONLY for generated `pnpm-lock.yaml`; authored manifest/traceability stay review-bounded. Decision needed before PR3 apply: No.
 
-## Phase 4: Control (PR4)
-- [ ] 4.1 RED rendered tests for roles, awaited events, single-flight, pending/error semantics, rejection/throw, retry, and focus.
-- [ ] 4.2 GREEN/refactor `apps/web/features/auth/_components/logout-control.tsx` with injected use case, `aria-busy`, and retry focus.
+## Phase 4: Functional DOM harness (PR4)
+- [ ] 4.1 RED `dom-component-test-harness.test.tsx`: isolation, lifecycle/global/act restoration, cleanup after failure, focus/body/storage, no leaked globals.
+- [ ] 4.2 GREEN `apps/web/shared/testing/dom-component-test-harness.ts`; extend `test:auth` to `.test.tsx`; preserve restoration/cleanup semantics; under 400 lines.
 
-## Phase 5: Surface (PR5)
-- [ ] 5.1 RED→GREEN mount the control in `active-plan-dashboard.tsx` footer and add responsive/focus/state CSS.
-- [ ] 5.2 RED→GREEN `apps/web/e2e/active-plan-dashboard.spec.ts` for placement, keyboard, pending, failure/retry, and exclusions.
+## Phase 5: Control (PR5)
+- [ ] 5.1 RED rendered tests for roles, awaited events, single-flight, pending/error, rejection/throw, retry, focus.
+- [ ] 5.2 GREEN `apps/web/features/auth/_components/logout-control.tsx` with injected use case, `aria-busy`, retry focus.
 
-## Phase 6: Safety and verification (PR6)
-- [ ] 6.1 RED→GREEN confirmed-only `location.replace("/login")`; add `session-flow.spec.ts` for once-only navigation, cookie/history/direct-route safety, and fail-once retry.
-- [ ] 6.2 Preserve pre-verification bytes, normalize `apps/web/next-env.d.ts`, and record traceability/final checks; package choice remains deferred until after PR2 normalization.
+## Phase 6: Surface (PR6)
+- [ ] 6.1 RED→GREEN footer mount in `active-plan-dashboard.tsx` plus responsive/focus/state CSS.
+- [ ] 6.2 RED→GREEN `apps/web/e2e/active-plan-dashboard.spec.ts` for placement, keyboard, pending, failure/retry, exclusions.
 
-Line-by-line review of generated lockfile text is not the proof: graph-hash equality, canonical header/count evidence, frozen acceptance, convergence, and exact-path checks prove semantic preservation and reproducibility.
+## Phase 7: Safety and final verification (PR7)
+- [ ] 7.1 RED→GREEN confirmed-only `location.replace("/login")`; `session-flow.spec.ts` for once-only navigation, cookie/history/direct-route safety, fail-once retry.
+- [ ] 7.2 Preserve pre-verification bytes, normalize `apps/web/next-env.d.ts`, record final traceability/checks; no behavior or test-semantic changes.
