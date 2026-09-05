@@ -218,7 +218,9 @@ test.describe("session route flow", () => {
 			}),
 		).toHaveCount(0);
 		await page.goto("/plan");
-		await expect(page).toHaveURL(/\/login\?returnTo=%2Fplan$/);
+		await expect(page).toHaveURL(
+			/\/login\?returnTo=%2Fplan(?:&context=auth_unavailable)?$/,
+		);
 		await expect(
 			page.getByRole("heading", {
 				name: "Tu plan de entrenamiento personalizado",
