@@ -38,6 +38,14 @@ The strategy remains `feature-branch-chain`: every child targets its immediate p
 | PR6 | `active-plan-dashboard.tsx`, `app/styles.css`, dashboard E2E: placement and exclusions. |
 | PR7 | `active-plan-dashboard.tsx`, `e2e/session-flow.spec.ts`: confirmed navigation and private-history safety. |
 
+## PR6 Evidence Allocation
+
+The current E2E auth adapter resolves synchronously with success, so it cannot honestly produce browser pending, failure, or retry behavior within PR6. The maintainer-approved allocation is therefore:
+
+- PR5 DOM tests remain the proof for pending, single-flight, rejection/throw normalization, retry, error clearing, and deterministic retry focus at the component boundary.
+- PR6 Playwright proof covers the footer placement, `/onboarding` and `/plan/generating` exclusions, responsive and accessible integration, and keyboard activation through the existing synchronous E2E adapter.
+- PR7 owns browser failure/retry plus confirmed navigation, session, history, and direct-route safety. PR6's `onSuccess` intentionally performs no navigation.
+
 ## Contracts, Proof, and Rollback
 
 `ProviderSignOutResult` remains `{ok:true}|{ok:false}`; `LogoutOutcome` remains `success|error`. Pending, alert copy, retry focus, confirmed-only `location.replace("/login")`, once-only navigation, adapter equivalence, and best-effort recovery remain unchanged and are proven in PR5–PR7.

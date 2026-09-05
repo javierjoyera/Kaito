@@ -250,6 +250,43 @@ test.describe("active plan dashboard", () => {
 		await expect(page).toHaveURL(/\/login\?returnTo=%2Fplan$/);
 	});
 
+	test("renders the logout control in the plan footer, excludes other private surfaces, and supports keyboard activation", async ({
+		page,
+	}) => {
+		await setSession(page);
+		await interceptActivePlan(page, 200, plan);
+		await page.goto("/plan");
+
+		const footer = page.locator(".plan-logout-footer");
+		const logoutButton = footer.getByRole("button", { name: "Log out" });
+		await expect(footer).toBeVisible();
+		await expect(logoutButton).toBeVisible();
+		expect(
+			await footer.evaluate((element) =>
+				element.previousElementSibling?.classList.contains("plan-content"),
+			),
+		).toBe(true);
+
+		await logoutButton.focus();
+		await logoutButton.press("Enter");
+		await expect(footer.getByText("Logged out")).toBeVisible();
+
+		await setSession(page);
+		await page.goto("/plan/generating");
+		await expect(page.getByRole("button", { name: "Log out" })).toHaveCount(0);
+
+		await page.context().clearCookies();
+		await page.context().addCookies([
+			{
+				name: "kaito-e2e-session",
+				value: "authenticated",
+				url: "http://127.0.0.1:3000",
+			},
+		]);
+		await page.goto("/onboarding");
+		await expect(page.getByRole("button", { name: "Log out" })).toHaveCount(0);
+	});
+
 	test("is responsive and exposes keyboard-operable navigation", async ({
 		page,
 	}) => {
@@ -278,6 +315,7 @@ test.describe("active plan dashboard", () => {
 				),
 			)
 			.toBe(true);
+		await expect(page.getByRole("button", { name: "Log out" })).toBeVisible();
 
 		const dashboardTab = page.getByRole("tab", { name: "Dashboard" });
 		await dashboardTab.focus();

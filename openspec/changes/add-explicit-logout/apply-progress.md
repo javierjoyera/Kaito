@@ -310,3 +310,29 @@ The approved global type/access remediation is in place. It preserves the existi
 - Final delta against the exact parent: `+192 -2 = 194` changed lines across the four allowed paths, below the 400-line PR5 budget. `git diff --check c67b4a0a84d5633fbc0ae30c3dfe8cc18c20d92b` → exit 0. Process cleanup probe `pgrep -fl 'tsx|next dev|next start|playwright|pnpm'` found no owned test, server, browser, or package-manager process.
 - No commit, push, PR operation, review/RDD operation, or `gentle-ai sdd-attempt` command was performed. The parent-owned token is `sha256:1a071f421f67c3ccb022a88e843ac5d994abbe6ca534d8f07d6be7f9d63474a7`.
 - Evidence revision: `sha256:7ba13adebb2e8c528f0610e570f41425625bd745af32b4c16c23fc26b9bce5f1`, SHA-256 of canonical parent/branch/work-unit/task/path/count/verification/cleanup facts.
+
+## PR6 `dashboard surface` strict-TDD completion
+
+**Status:** complete. Work unit `pr6-dashboard-surface` mounts the existing provider-neutral `LogoutControl` exactly once in the active-plan footer, outside the dashboard/calendar conditional. It injects `createExplicitLogout(browserSignOut)` and intentionally gives `onSuccess` no navigation behavior; PR7 owns navigation and safety semantics.
+
+### Maintainer-approved Evidence Allocation
+
+The synchronous always-successful E2E adapter cannot honestly create browser pending, failure, or retry states. PR5 DOM tests remain the evidence for pending, single-flight, rejection/throw, retry, error clearing, and retry focus. PR6 Playwright proves footer placement, `/onboarding` and `/plan/generating` exclusions, responsive/accessible integration, and keyboard activation. Browser failure/retry, navigation, session, history, and direct-route safety remain deferred to PR7.
+
+### TDD Cycle Evidence — PR6
+
+| Task | Test file / layer | Safety Net | RED | GREEN | TRIANGULATE | REFACTOR | Outcome |
+|---|---|---|---|---|---|---|---|
+| 6.1 | `e2e/active-plan-dashboard.spec.ts` / Chromium dashboard integration | Existing PR5 DOM control tests retained the state-machine safety net | `pnpm test:web-e2e -- active-plan-dashboard.spec.ts` → exit 1; new footer locator was absent; 89 pass, 1 fail | Mounted the footer control and added dedicated responsive, focus, disabled, semantic-status, and alert styling; `pnpm --filter web exec playwright test e2e/active-plan-dashboard.spec.ts --grep "renders the logout control"` → exit 0; 1 pass | Existing responsive dashboard scenario extended to require the mounted control at narrow width; focused command with its test name → exit 0; 1 pass | `pnpm --filter web exec eslint features/planning/_components/active-plan-dashboard.tsx e2e/active-plan-dashboard.spec.ts --fix --max-warnings=0` → exit 0 before final verification | Complete |
+| 6.2 | `e2e/active-plan-dashboard.spec.ts` / Chromium dashboard integration | Same PR5 DOM state-machine boundary | Same failing footer-placement RED | The focused footer test passed: footer follows `.plan-content`, keyboard Enter reaches the synchronous success status, and excluded routes contain no control | Narrow viewport scenario confirms no horizontal overflow and a visible control; exit 0, 1 pass | Same targeted ESLint normalization before final verification; no source mutation followed | Complete |
+
+### Verification, Scope, and Delivery
+
+- Final required suite: `pnpm test:web-auth && pnpm test:web-e2e` → exit 0; auth 119 pass, 0 fail; development Chromium 90 pass, 0 fail; production Chromium 1 pass, 0 fail.
+- The E2E suite logs the pre-existing synthetic no-DSN validation error during its dedicated no-Sentry test; the suite still exits 0.
+- Completed persisted task checkboxes: `6.1` and `6.2` are marked `- [x]` in `tasks.md`. Remaining tasks: `- [ ] 7.1 RED→GREEN confirmed-only \`location.replace("/login")\`; \`session-flow.spec.ts\` for once-only navigation, cookie/history/direct-route safety, fail-once retry.` and `- [ ] 7.2 Preserve pre-verification bytes, normalize \`apps/web/next-env.d.ts\`, record final traceability/checks; no behavior or test-semantic changes.`
+- Files changed: `apps/web/features/planning/_components/active-plan-dashboard.tsx`, `apps/web/app/styles.css`, `apps/web/e2e/active-plan-dashboard.spec.ts`, `openspec/changes/add-explicit-logout/design.md`, `openspec/changes/add-explicit-logout/tasks.md`, and this cumulative `apply-progress.md`.
+- Workload / PR boundary: feature-branch-chain PR6 `surface`, based on exact parent `c08e3dec610ac8639b7a839f106e5908c08b18c5`; no commit, push, PR, review/RDD, or attempt lifecycle operation was performed. PR6 stays limited to the dashboard footer/CSS/E2E slice; PR7 owns navigation and safety.
+- Action context: parent authorized only the six listed paths. No edit occurred outside that set. Design deviation: none; the maintainer-approved evidence allocation is documented without changing proposal or specification.
+- Cleanup/process evidence: focused and required test commands completed; `pgrep -fl 'tsx|next dev|next start|playwright|pnpm'` returned no owned process after final verification.
+- Evidence revision: `sha256:b876245def747bd1216ac0c9d3c03a06fb4b439854c018275cfe3bf83fdd0c9d`, derived from the canonical parent, branch, work unit, completed tasks, allowed path set, focused/final test counts, normalization, diff-check, and cleanup facts.

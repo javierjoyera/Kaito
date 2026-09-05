@@ -20,7 +20,7 @@ Tracker `feat/explicit-logout` is draft/no-merge. Chain: `PR1 auth → PR2 norma
 | PR3 dependencies | Version/peer/engine/path/frozen proof | N/A: manifest/lock only | Manifest, lockfile, traceability |
 | PR4 harness | `pnpm test:web-auth` | N/A: lifecycle tests prove runtime boundary | Harness/script |
 | PR5 control | `pnpm test:web-auth` | N/A: DOM proves interaction/focus | Control/tests |
-| PR6 surface | `pnpm test:web-auth && pnpm test:web-e2e` | Chromium placement/exclusions/retry | Dashboard/CSS/E2E |
+| PR6 surface | `pnpm test:web-auth && pnpm test:web-e2e` | Chromium footer placement, exclusions, responsive/accessibility integration, and keyboard activation; PR5 DOM tests prove pending/failure/retry | Dashboard/CSS/E2E |
 | PR7 safety | `pnpm test:web-auth && pnpm test:web-e2e && pnpm lint:web && pnpm build:web` | Chromium success/history/direct-route/retry | Safety E2E/final wiring |
 
 ## Phase 1: Auth boundary (PR1)
@@ -47,8 +47,11 @@ Tracker `feat/explicit-logout` is draft/no-merge. Chain: `PR1 auth → PR2 norma
 - [x] 5.2 GREEN `apps/web/features/auth/_components/logout-control.tsx` with injected use case, `aria-busy`, retry focus.
 
 ## Phase 6: Surface (PR6)
-- [ ] 6.1 RED→GREEN footer mount in `active-plan-dashboard.tsx` plus responsive/focus/state CSS.
-- [ ] 6.2 RED→GREEN `apps/web/e2e/active-plan-dashboard.spec.ts` for placement, keyboard, pending, failure/retry, exclusions.
+
+Maintainer-approved evidence allocation: the synchronous always-successful E2E auth adapter cannot honestly exercise browser pending, failure, or retry. PR5 DOM tests remain the proof for pending, single-flight, rejection/throw, retry, error clearing, and retry focus. PR6 Playwright covers footer placement, route exclusions, responsive/accessible integration, and keyboard activation; browser failure/retry and navigation/session/history/direct-route safety are deferred to PR7.
+
+- [x] 6.1 RED→GREEN footer mount in `active-plan-dashboard.tsx` plus responsive/focus/state CSS.
+- [x] 6.2 RED→GREEN `apps/web/e2e/active-plan-dashboard.spec.ts` for footer placement, keyboard activation, responsive/accessible integration, and exclusions.
 
 ## Phase 7: Safety and final verification (PR7)
 - [ ] 7.1 RED→GREEN confirmed-only `location.replace("/login")`; `session-flow.spec.ts` for once-only navigation, cookie/history/direct-route safety, fail-once retry.
