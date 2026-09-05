@@ -54,5 +54,5 @@ Maintainer-approved evidence allocation: the synchronous always-successful E2E a
 - [x] 6.2 RED→GREEN `apps/web/e2e/active-plan-dashboard.spec.ts` for footer placement, keyboard activation, responsive/accessible integration, and exclusions.
 
 ## Phase 7: Safety and final verification (PR7)
-- [ ] 7.1 RED→GREEN confirmed-only `location.replace("/login")`; `session-flow.spec.ts` for once-only navigation, cookie/history/direct-route safety, fail-once retry.
-- [ ] 7.2 Preserve pre-verification bytes, normalize `apps/web/next-env.d.ts`, record final traceability/checks; no behavior or test-semantic changes.
+- [x] 7.1 RED→GREEN confirmed-only `location.replace("/login")`; `session-flow.spec.ts` for once-only navigation, cookie/history/direct-route safety, fail-once retry.
+- [x] 7.2 Preserve pre-verification bytes, normalize `apps/web/next-env.d.ts`, record final traceability/checks; no behavior or test-semantic changes.

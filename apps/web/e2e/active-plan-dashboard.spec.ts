@@ -269,7 +269,7 @@ test.describe("active plan dashboard", () => {
 
 		await logoutButton.focus();
 		await logoutButton.press("Enter");
-		await expect(footer.getByText("Logged out")).toBeVisible();
+		await expect(page).toHaveURL("/login");
 
 		await setSession(page);
 		await page.goto("/plan/generating");

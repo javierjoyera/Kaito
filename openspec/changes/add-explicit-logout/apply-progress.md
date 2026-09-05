@@ -336,3 +336,48 @@ The synchronous always-successful E2E adapter cannot honestly create browser pen
 - Action context: parent authorized only the six listed paths. No edit occurred outside that set. Design deviation: none; the maintainer-approved evidence allocation is documented without changing proposal or specification.
 - Cleanup/process evidence: focused and required test commands completed; `pgrep -fl 'tsx|next dev|next start|playwright|pnpm'` returned no owned process after final verification.
 - Evidence revision: `sha256:b876245def747bd1216ac0c9d3c03a06fb4b439854c018275cfe3bf83fdd0c9d`, derived from the canonical parent, branch, work unit, completed tasks, allowed path set, focused/final test counts, normalization, diff-check, and cleanup facts.
+
+## PR7 `logout safety` strict-TDD attempt
+
+**Status:** blocked after GREEN/triangulation because the mandatory complete E2E suite exposes an expected outdated PR6 assertion in `apps/web/e2e/active-plan-dashboard.spec.ts`, which is outside the parent-authorized edit roots. No task checkbox was changed.
+
+### TDD Cycle Evidence — PR7
+
+| Task | Test file / layer | Safety Net | RED | GREEN | TRIANGULATE | REFACTOR | Outcome |
+|---|---|---|---|---|---|---|---|
+| 7.1 | `features/auth/_adapters/browser-sign-out.test.ts` / unit | `pnpm test:web-auth` → exit 0; 119 pass, 0 fail before edits | Added the fail-once test first; `pnpm --filter web exec tsx --test features/auth/_adapters/browser-sign-out.test.ts` → exit 1; expected `{ ok: false }`, received `{ ok: true }` | Adapter-contained, already-gated hash signal returns `{ ok: false }` once without clearing a session or requesting Supabase; focused unit command → exit 0; 6 pass, 0 fail | Unit proves ordinary test-adapter success, fail-once then success, unavailable client, provider failure, and no Supabase call in test-adapter mode. `session-flow.spec.ts` RED initially failed because the PR6 footer mount did not exist; after the confirmed-only dashboard wiring it passed focused Chromium: 1 pass | Targeted `eslint --fix --max-warnings=0` completed on the four allowed authored code/test paths; focused unit and focused E2E reran and passed | Blocked only at complete-suite regression outside allowed roots |
+| 7.2 | final verification / traceability | N/A until the required complete verification succeeds | N/A | Not completed | The chained final command reached `pnpm test:web-auth` successfully (120 pass) then `pnpm test:web-e2e` failed 1/91 before lint/build could run | `next-env.d.ts` was restored byte-for-byte to parent canonical form after development Playwright temporarily changed it to `.next/dev/types/routes.d.ts` | Blocked; leave unchecked |
+
+### PR7 Implementation and Verification
+
+- Files changed within authority: `apps/web/features/auth/_adapters/browser-sign-out.ts`, `apps/web/features/auth/_adapters/browser-sign-out.test.ts`, `apps/web/features/planning/_components/active-plan-dashboard.tsx`, `apps/web/e2e/session-flow.spec.ts`, `openspec/changes/add-explicit-logout/design.md`, and this cumulative `apply-progress.md`.
+- The adapter consumes only `#kaito-e2e-sign-out-fail-once` while its existing loopback/non-production test mode is enabled. The signal is removed through browser history inside the adapter; Playwright neither edits cookies for the signal nor exposes test mechanics to the use case or component.
+- `active-plan-dashboard.tsx` now keeps `createExplicitLogout(browserSignOut)` provider-neutral and uses `window.location.replace("/login")` only from the confirmed `LogoutControl` success callback.
+- Focused checks: adapter unit command → exit 0; 6 pass, 0 fail. Focused Playwright command `pnpm --filter web exec playwright test e2e/session-flow.spec.ts --grep "fails logout once"` → exit 0; 1 pass. The final chained command `pnpm test:web-auth && pnpm test:web-e2e && pnpm lint:web && pnpm build:web` → exit 1 at `pnpm test:web-e2e`; auth passed 120/120 and E2E passed 90/91. Lint and build did not execute because `&&` correctly stopped.
+- Blocking evidence: PR6's allowed-at-its-time test still expects `footer.getByText("Logged out")` after keyboard activation. PR7's required confirmed-only full navigation replaces `/plan` with `/login`, so that old assertion fails. Updating the expected navigation assertion requires `apps/web/e2e/active-plan-dashboard.spec.ts`, which is not an allowed edit surface.
+- Workload / PR boundary: feature-branch-chain PR7 `safety`, exact parent `8260e434089ab5d5575490cb98b5456f249a27af`; the current code/test/design delta before this progress entry is 160 additions and 1 deletion across five authored files, below the 400-line cap. No commit, push, PR operation, review/RDD, or attempt lifecycle command was performed.
+- Action-context warning: do not mark 7.1 or 7.2 complete and do not run source mutation after this record. To finish, the parent must authorize the one obsolete PR6 E2E assertion update, then rerun the required final command with build last.
+- Remaining implementation-owned tasks: `- [ ] 7.1 RED→GREEN confirmed-only \`location.replace("/login")\`; \`session-flow.spec.ts\` for once-only navigation, cookie/history/direct-route safety, fail-once retry.` and `- [ ] 7.2 Preserve pre-verification bytes, normalize \`apps/web/next-env.d.ts\`, record final traceability/checks; no behavior or test-semantic changes.`
+- Deterministic blocked-attempt evidence revision: `sha256:d5fdb3beda953bc29d7d2c9f2f278b9b9900021a6e634db4ce7215ba8078eeb3`, SHA-256 of the canonical parent, branch, work unit, unchecked task state, 120/120 auth result, 90/91 E2E result, blocked path, and canonical `next-env.d.ts` hash.
+
+## PR7 `logout safety` bounded remediation
+
+**Status:** complete. This remediates failed evidence `sha256:d5fdb3beda953bc29d7d2c9f2f278b9b9900021a6e634db4ce7215ba8078eeb3` under the maintainer-authorized PR7 scope.
+
+### Remediation and Strict-TDD Continuity
+
+| Task | Existing RED/GREEN/TRIANGULATE evidence | Bounded remediation | Result |
+|---|---|---|---|
+| 7.1 | Preserved from the first attempt: adapter unit RED→GREEN (6/6), focused fail-once E2E GREEN (1/1), and session/history/direct-route triangulation | Confirmed the obsolete PR6 assertion failed because `Logged out` is replaced by confirmed navigation; changed only `footer.getByText("Logged out")` to `page.toHaveURL("/login")` | Complete |
+| 7.2 | Preserved first-attempt canonicalization evidence | Targeted source-mutating normalization completed before final verification; final suite completed without authored candidate mutation and `next-env.d.ts` equals parent canonical bytes | Complete |
+
+### Final Evidence
+
+- Initial focused failure: `pnpm --filter web exec playwright test e2e/active-plan-dashboard.spec.ts --grep "renders the logout control"` → exit 1 at the obsolete `footer.getByText("Logged out")` visibility assertion (line 272).
+- Semantic correction: only `apps/web/e2e/active-plan-dashboard.spec.ts` changed its post-success expectation to `await expect(page).toHaveURL("/login")`; this matches confirmed `window.location.replace("/login")` behavior.
+- Required normalization: `pnpm --filter web exec eslint e2e/active-plan-dashboard.spec.ts --fix --max-warnings=0` → exit 0; no output.
+- Final command, run once with build last: `pnpm test:web-auth && pnpm test:web-e2e && pnpm lint:web && pnpm build:web` → exit 0; auth 120/120, development E2E 91/91, production E2E 1/1, lint 0 warnings, and build compiled/type-checked/generated 9/9 static pages.
+- Pre-artifact candidate proof: exact parent `8260e434089ab5d5575490cb98b5456f249a27af`; authored code/test patch SHA-256 `aade69a83809e25983895e8dc928d5d8314decd5dd84d989f3c9d7fdc1a28b28`; no authored candidate bytes changed after final verification. `apps/web/next-env.d.ts` parent/current SHA-256: `7b550dda9686c16f36a17bf9051d5dbf31e98555b30d114ac49fc49a1e712651`.
+- Completion: persisted task checkboxes 7.1 and 7.2 are `- [x]`. No design deviation; only the maintainer-authorized stale E2E assertion changed.
+- Workload / PR boundary: feature-branch-chain PR7 `safety`; final diff, whitespace, path, and process proofs are recorded below. No commit, push, PR, staging, checkout, branch mutation, review, or attempt lifecycle operation occurred.
+- Deterministic remediation evidence revision: `sha256:b7d002b0ca4c3ef166280036f078cb945bac93f736a06d6076a18dee5d9d5a09`.

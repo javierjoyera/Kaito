@@ -208,7 +208,10 @@ function Plan({ plan }: { plan: ActiveTrainingPlan }) {
 				)}
 			</div>
 			<footer className="plan-logout-footer">
-				<LogoutControl logout={explicitLogout} onSuccess={() => {}} />
+				<LogoutControl
+					logout={explicitLogout}
+					onSuccess={() => window.location.replace("/login")}
+				/>
 			</footer>
 		</main>
 	);
