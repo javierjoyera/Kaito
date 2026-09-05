@@ -39,8 +39,8 @@ Tracker `feat/explicit-logout` is draft/no-merge. Chain: `PR1 auth → PR2 norma
 - [x] 3.2 Prove exact versions, peers, engines, frozen-lock acceptance, exact paths, and measured +442 lockfile lines. `size:exception` is approved ONLY for generated `pnpm-lock.yaml`; authored manifest/traceability stay review-bounded. Decision needed before PR3 apply: No.
 
 ## Phase 4: Functional DOM harness (PR4)
-- [ ] 4.1 RED `dom-component-test-harness.test.tsx`: isolation, lifecycle/global/act restoration, cleanup after failure, focus/body/storage, no leaked globals.
-- [ ] 4.2 GREEN `apps/web/shared/testing/dom-component-test-harness.ts`; extend `test:auth` to `.test.tsx`; preserve restoration/cleanup semantics; under 400 lines.
+- [x] 4.1 RED `dom-component-test-harness.test.tsx`: isolation, lifecycle/global/act restoration, cleanup after failure, focus/body/storage, no leaked globals.
+- [x] 4.2 GREEN `apps/web/shared/testing/dom-component-test-harness.ts`; extend `test:auth` to `.test.tsx`; preserve restoration/cleanup semantics; under 400 lines.
 
 ## Phase 5: Control (PR5)
 - [ ] 5.1 RED rendered tests for roles, awaited events, single-flight, pending/error, rejection/throw, retry, focus.

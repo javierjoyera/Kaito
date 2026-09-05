@@ -9,7 +9,7 @@
     "lint": "eslint . --max-warnings=0",
     "test:sentry-scrubbing": "tsx --test lib/sentry-scrubbing.test.ts",
     "test:health": "tsx --test app/health/route.test.ts",
-    "test:auth": "tsx --test \"features/auth/**/*.test.ts\" \"shared/**/*.test.ts\"",
+		"test:auth": "tsx --test \"features/auth/**/*.test.ts\" \"features/auth/**/*.test.tsx\" \"shared/**/*.test.ts\" \"shared/**/*.test.tsx\"",
     "test:onboarding": "tsx --test \"features/onboarding/**/*.test.ts\"",
     "test:e2e": "playwright test && playwright test --config=playwright.production.config.ts",
     "test:e2e:install": "playwright install chromium"

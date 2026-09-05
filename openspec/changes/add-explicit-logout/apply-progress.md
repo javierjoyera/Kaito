@@ -193,3 +193,91 @@ No executable production behavior is introduced, so a fabricated RED test would 
 - `pnpm`/`tsx` commands completed; `pgrep -fl 'tsx|next dev|next start|playwright|pnpm'` returned no owned process after verification. Temporary lock witnesses were removed by exit trap or explicit cleanup; no repository cleanup or revert was required.
 - No `gentle-ai sdd-attempt` command was called. Native attempt generation `8`, ordinal `8`, remains owned by the orchestrator; max attempts `1`, native maximum `600` changed lines.
 - Evidence revision: `sha256:3074b70d1a401978b232e4e5185e078dbf79a0be611407cbaeccd5d639e5d30e`, derived deterministically from exact parent/branch, lock SHA-256, generated/authored counts, changed paths, completed tasks, and passing verification facts.
+
+## PR4 `functional DOM harness` strict-TDD completion (generation 9, ordinal 9)
+
+**Status:** complete. Work unit `pr4-functional-dom-harness` adds Node-only DOM component-test lifecycle infrastructure and no product imports or runtime feature behavior.
+
+### TDD Cycle Evidence — PR4
+
+| Task | Test file / layer | Safety Net | RED | GREEN | TRIANGULATE | REFACTOR | Outcome |
+|---|---|---|---|---|---|---|---|
+| 4.1 | `shared/testing/dom-component-test-harness.test.tsx` / Node DOM integration | `pnpm test:web-auth` → exit 0; 113 pass, 0 fail | `pnpm --filter web exec tsx --test shared/testing/dom-component-test-harness.test.tsx` → exit 1; module `./dom-component-test-harness` absent; 0 pass, 1 fail | Same command → exit 0; 2 pass, 0 fail | Independent lifecycle cases prove isolated body/focus/storage/user-event/window behavior and failure-path root/global/act restoration | Dynamic Testing Library imports occur only after JSDOM installation; same focused command remained 2/2 and removed React's import-time DOM fallback | Complete |
+| 4.2 | Same Node DOM integration test | Same 113/113 baseline before `package.json` edit | N/A — depends on task 4.1's absent-module RED | `pnpm test:web-auth` → exit 0; 115 pass, 0 fail; `.test.tsx` globs include the harness | Script extension is independently proven by the 115-test auth command | Targeted `eslint --fix` completed with no reported changes; focused and full auth tests remained green | Complete |
+
+### Work Unit Evidence — PR4
+
+| Evidence | Result |
+|---|---|
+| Focused test command and exact result | `pnpm --filter web exec tsx --test shared/testing/dom-component-test-harness.test.tsx` → exit 0; 2 pass, 0 fail. |
+| Runtime harness command/scenario and exact result | Same focused command → exit 0; rendered a React input, awaited bound `user-event` focus/type operations, used loopback body/localStorage, then proved a second DOM had no body/storage/window carry-over and a thrown callback still unmounted its React root and restored `window`, `document`, and `IS_REACT_ACT_ENVIRONMENT`. |
+| Normalization | `pnpm --filter web exec eslint shared/testing/dom-component-test-harness.ts shared/testing/dom-component-test-harness.test.tsx --fix --max-warnings=0` → exit 0; no output. |
+| Rollback boundary | Remove `apps/web/shared/testing/dom-component-test-harness.ts`, its `.test.tsx`, the two `.test.tsx` test-script glob arguments, and this PR4 traceability; no production component, route, provider, CSS, or navigation behavior is affected. |
+
+### Size, Cleanup, and Native Context
+
+- Feature-branch-chain child `feat/explicit-logout-harness-pr3` starts at immediate parent `chore/explicit-logout-dom-test-dependencies` (`e9471ba`); the stale local branch had no unique commits and was safely aligned before work. Historical `feat/explicit-logout-harness` was not used.
+- Candidate changed lines against `e9471ba`: `+196 -3 = 199`; all five paths are limited to the harness test, harness source, auth test script, task checkboxes, and cumulative apply-progress.
+- `git diff --check e9471ba` completed with exit 0. No temporary files were created; `pgrep -fl 'tsx|next dev|next start|playwright|pnpm'` returned no owned process (exit 1, expected for no matches).
+- Evidence revision: `sha256:83c24be8ed6af95e420b37963d021dd73f5f7e9fef0443eb4c13739662b99d0e`, derived from generation/ordinal, exact base/branch, completed tasks, final diff/path set, focused/full test facts, normalization, diff-check, and process status.
+- No `gentle-ai sdd-attempt` command was called. Native attempt generation `9`, ordinal `9`, work unit `pr4-functional-dom-harness`, maximum attempts `1`, and native maximum `400` changed lines remain orchestrator-owned.
+
+## PR4 CI Type Remediation (generation 10, ordinal 10)
+
+```json
+{"schema":"gentle-ai.remediation-result/v1","lineage_id":"pr4-ci-type-remediation","generation":10,"ordinal":10,"fix_batch":1,"failed_evidence_revision":"sha256:2c8d668ddfa07d1e2be6e0b2d2cab292015afe4309c0effacc143b6c710c0ff9","status":"blocked","complete":false}
+```
+```json
+{"schema":"gentle-ai.remediation-evidence/v1","evidence_revision":"sha256:086dded6ec0858028b50981401b510b955a34ccdadf6f744a73274b374210374","ci":{"run":32897804414,"job":97964367601},"red":{"command":"pnpm build:web","exit":1,"error":"globalThis.IS_REACT_ACT_ENVIRONMENT missing on typeof globalThis at dom-component-test-harness.ts:24"},"green":{"source":"explicit intersection-typed global alias; identical property set and snapshot/restore lifecycle","focused":"2 pass, 0 fail","web_auth":"115 pass, 0 fail","build":"exit 1: pre-existing left possibly undefined at dom-component-test-harness.ts:79"},"normalize":{"command":"pnpm --filter web exec eslint shared/testing/dom-component-test-harness.ts --fix --max-warnings=0","exit":0},"checks":{"diff_check":"git diff --check a8c7fe4: exit 0","process_cleanup":"no owned tsx/Next/Playwright/pnpm process"}}
+```
+
+The approved global type/access remediation is in place. It preserves the existing save/set/restore behavior, and no task checkbox, test, dependency, package, product, route, control, dashboard, CSS, navigation, or E2E file changed. The requested successful build cannot be claimed: after the original line-24 RED was fixed, TypeScript exposed the pre-existing independent `left`-possibly-undefined error at line 79. That error is outside the approved scope, so no further source change was made.
+
+| Evidence | Result |
+|---|---|
+| Focused runtime harness | `pnpm --filter web exec tsx --test shared/testing/dom-component-test-harness.test.tsx` → exit 0; 2 pass, 0 fail. |
+| Full auth suite | `pnpm test:web-auth` → exit 0; 115 pass, 0 fail. |
+| REFACTOR/NORMALIZE | Targeted source-mutating ESLint `--fix` ran before final verification → exit 0; no output. |
+| Final build | `pnpm build:web` → exit 1. The original missing-global error is resolved; TypeScript now stops at the out-of-scope line-79 nullability error. |
+| Rollback boundary | Revert the explicit alias/access in `apps/web/shared/testing/dom-component-test-harness.ts` and this remediation evidence; no unrelated behavior is removed. |
+
+- Source remediation diff against `a8c7fe4`: `+4 -1` (5 changed lines). No commit, push, PR edit, review, RDD, or executor-owned `gentle-ai sdd-attempt` command was performed.
+- The orchestrator externally settled generation `10`, ordinal `10`, as `failed`; terminal settlement is complete. Changed lines: `27`.
+- Terminal runtime revision: `sha256:182091ae911a7f956e71b51baef21773537896ecd1122bc337e06e20028138af`.
+- Evidence revision: `sha256:086dded6ec0858028b50981401b510b955a34ccdadf6f744a73274b374210374`.
+- Final diagnosis: the original global type error was fixed, then the line-79 nullability failure surfaced.
+
+## PR4 CI Nullability Remediation (generation 11, ordinal 11)
+
+```json
+{"schema":"gentle-ai.remediation-result/v1","lineage_id":"pr4-ci-nullability-remediation","generation":11,"ordinal":11,"fix_batch":2,"failed_evidence_revision":"sha256:086dded6ec0858028b50981401b510b955a34ccdadf6f744a73274b374210374","status":"success","complete":true}
+```
+```json
+{"schema":"gentle-ai.remediation-evidence/v1","lineage_id":"pr4-ci-nullability-remediation","generation":11,"ordinal":11,"fix_batch":2,"failed_evidence_revision":"sha256:086dded6ec0858028b50981401b510b955a34ccdadf6f744a73274b374210374","evidence_revision":"sha256:579879b7528703702d914af904127837b1c6a3ad9b9f902f674a48fe49b3b833","red":{"command":"pnpm build:web","exit":1,"error":"left is possibly undefined at dom-component-test-harness.ts:79"},"green":{"source":"explicit left guard followed by unchanged descriptor comparisons"},"triangulate":{"focused":"2 pass, 0 fail","web_auth":"115 pass, 0 fail","build":"exit 0; 9/9 static pages"},"refactor":{"command":"pnpm --filter web exec eslint shared/testing/dom-component-test-harness.ts --fix --max-warnings=0","exit":0},"checks":{"diff_check":"git diff --check a8c7fe4: exit 0","process_cleanup":"no owned tsx/Next/Playwright/pnpm process"}}
+```
+
+### TDD Cycle Evidence — PR4 CI Nullability Remediation
+
+| Task | Test file / layer | Safety Net | RED | GREEN | TRIANGULATE | REFACTOR | Outcome |
+|---|---|---|---|---|---|---|---|
+| Generation 11 bounded CI remediation | Existing Node DOM integration harness | Existing focused harness and auth tests were preserved; no test changes permitted | `pnpm build:web` → exit 1; TypeScript reports `left` possibly undefined at line 79 | Added `if (!left) return false`; descriptor comparisons remain identical for defined descriptors | Focused harness 2/2; auth suite 115/115; build exit 0 | Targeted ESLint `--fix --max-warnings=0` → exit 0 before final focused/auth/build sequence; no source mutation afterward | Complete |
+
+### Work Unit Evidence
+
+| Evidence | Result |
+|---|---|
+| Focused test command and exact result | `pnpm --filter web exec tsx --test shared/testing/dom-component-test-harness.test.tsx` → exit 0; 2 pass, 0 fail. |
+| Runtime harness command/scenario and exact result | The same Node DOM integration command mounted the loopback DOM and proved lifecycle/global restoration → exit 0; 2 pass, 0 fail. |
+| Rollback boundary | Revert only the generation-11 `left` guard in `apps/web/shared/testing/dom-component-test-harness.ts` and this generation-11 evidence; no unrelated behavior is removed. |
+
+- Final authentication verification: `pnpm test:web-auth` → exit 0; 115 pass, 0 fail.
+- Final build: `pnpm build:web` → exit 0; compiled, type-checked, and generated 9/9 static pages.
+- Generation-11 delta: source `+3 -1` (4) and this evidence `+31 -0` (31), for `35` changed lines; within the 100-line cap.
+- `git diff --check a8c7fe4` → exit 0. Process cleanup check found no owned `tsx`, Next, Playwright, or pnpm process.
+- No source mutation occurred after the final focused/auth/build verification; no task checkbox, test, package, dependency, product, route, control, dashboard, CSS, navigation, or E2E file changed.
+- No commit, push, PR edit, review, RDD, or executor-owned `gentle-ai sdd-attempt` command was performed.
+- The orchestrator externally settled generation `11`, ordinal `11`, as `passed`; native status is `complete`; `next_action: complete`. Changed lines: `35`.
+- Terminal runtime revision: `sha256:af16d4841fc2a737e3658afbbd08b23943650012983d7159d2cb9c7da3b20ad7`.
+- Evidence revision: `sha256:579879b7528703702d914af904127837b1c6a3ad9b9f902f674a48fe49b3b833`.
+- Remediates evidence revision: `sha256:086dded6ec0858028b50981401b510b955a34ccdadf6f744a73274b374210374`.
+- Deterministic evidence revision: `sha256:579879b7528703702d914af904127837b1c6a3ad9b9f902f674a48fe49b3b833`, SHA-256 of the canonical remediation facts recorded in the evidence envelope.
