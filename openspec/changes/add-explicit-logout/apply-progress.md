@@ -281,3 +281,32 @@ The approved global type/access remediation is in place. It preserves the existi
 - Evidence revision: `sha256:579879b7528703702d914af904127837b1c6a3ad9b9f902f674a48fe49b3b833`.
 - Remediates evidence revision: `sha256:086dded6ec0858028b50981401b510b955a34ccdadf6f744a73274b374210374`.
 - Deterministic evidence revision: `sha256:579879b7528703702d914af904127837b1c6a3ad9b9f902f674a48fe49b3b833`, SHA-256 of the canonical remediation facts recorded in the evidence envelope.
+
+## PR5 `control` strict-TDD completion
+
+**Status:** complete. Work unit `pr5-logout-control` adds an unmounted, provider-neutral control only; dashboard mounting and browser navigation remain deferred to PR6–PR7.
+
+### TDD Cycle Evidence — PR5
+
+| Task | Test file / layer | Safety Net | RED | GREEN | TRIANGULATE | REFACTOR | Outcome |
+|---|---|---|---|---|---|---|---|
+| 5.1 | `logout-control.test.tsx` / Node DOM component | Existing PR4 harness is the tested DOM lifecycle safety net | `pnpm --filter web exec tsx --test features/auth/_components/logout-control.test.tsx` → exit 1; `./logout-control` absent; 0 pass, 1 fail | Added rendered tests before production code; same command → exit 0; 3 pass, 0 fail | Added keyboard activation case; same command → exit 0; 4 pass, 0 fail | Tests remain wrapper-local, await user events/`act`, and use semantic roles with no runner-global state | Complete |
+| 5.2 | `logout-control.tsx` / Node DOM component | Task 5.1 RED establishes the behavior boundary | N/A — task 5.1 owns the absent-module RED | Same focused command → exit 0; 3 pass, 0 fail after minimal client component implementation | Keyboard case, failure result, thrown rejection, deferred single-flight, retry, focus, and successful retry all pass; 4/4 | No code simplification improved the state machine; targeted ESLint normalization ran before final verification | Complete |
+
+### Work Unit Evidence
+
+| Evidence | Result |
+|---|---|
+| Focused DOM command | `pnpm --filter web exec tsx --test features/auth/_components/logout-control.test.tsx` → exit 0; 4 pass, 0 fail. |
+| Final auth suite | `pnpm test:web-auth` → exit 0; 119 pass, 0 fail. |
+| Source normalization | `pnpm --filter web exec eslint features/auth/_components/logout-control.tsx features/auth/_components/logout-control.test.tsx --fix --max-warnings=0` → exit 0; completed before final focused and auth verification; no source mutation followed. |
+| Behavior proved | Semantic button/status/alert roles; awaited pointer and keyboard events; `aria-busy` plus disabled pending state; ref-backed single flight; `{ status: "error" }` and thrown failure feedback; focused retry; and success callback only after the injected use case confirms success. |
+| Rollback boundary | Remove only `logout-control.tsx`, `logout-control.test.tsx`, and this PR5 traceability. No dashboard, CSS, route, navigation, adapter, dependency, script, or E2E path was changed. |
+
+### Scope, Delivery, and Cleanup
+
+- Tasks 5.1 and 5.2 were marked complete in `tasks.md` immediately after final verification. Parent-owned lifecycle work is deferred: PR6 tasks 6.1–6.2 and PR7 tasks 7.1–7.2 remain unchecked.
+- Chain boundary: `feature-branch-chain`; PR5 `control` starts at exact parent `c67b4a0a84d5633fbc0ae30c3dfe8cc18c20d92b` and contains only the control, its DOM tests, and required OpenSpec traceability. It must remain under the 400-line PR budget.
+- Final delta against the exact parent: `+192 -2 = 194` changed lines across the four allowed paths, below the 400-line PR5 budget. `git diff --check c67b4a0a84d5633fbc0ae30c3dfe8cc18c20d92b` → exit 0. Process cleanup probe `pgrep -fl 'tsx|next dev|next start|playwright|pnpm'` found no owned test, server, browser, or package-manager process.
+- No commit, push, PR operation, review/RDD operation, or `gentle-ai sdd-attempt` command was performed. The parent-owned token is `sha256:1a071f421f67c3ccb022a88e843ac5d994abbe6ca534d8f07d6be7f9d63474a7`.
+- Evidence revision: `sha256:7ba13adebb2e8c528f0610e570f41425625bd745af32b4c16c23fc26b9bce5f1`, SHA-256 of canonical parent/branch/work-unit/task/path/count/verification/cleanup facts.
