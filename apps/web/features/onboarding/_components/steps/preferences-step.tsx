@@ -4,8 +4,8 @@ import type {
 	MountainTrailAccess,
 	PlanningPreference,
 	TrainingPreferencesDraft,
-} from "../_domain/step-validation";
-import { fieldErrorMessage } from "./field-messages";
+} from "../../_domain/step-validation";
+import { fieldErrorMessage } from "../fields/field-messages";
 
 type PreferenceOption<T extends string> = Readonly<{
 	value: T;

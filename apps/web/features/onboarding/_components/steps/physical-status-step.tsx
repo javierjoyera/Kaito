@@ -2,8 +2,8 @@ import type {
 	FieldErrors,
 	PhysicalStatus,
 	PhysicalStatusDraft,
-} from "../_domain/step-validation";
-import { fieldErrorMessage } from "./field-messages";
+} from "../../_domain/step-validation";
+import { fieldErrorMessage } from "../fields/field-messages";
 
 type PhysicalStatusOption = Readonly<{
 	value: PhysicalStatus;

@@ -50,9 +50,29 @@ async function armMadridCaptureQueue(page: Page, instants: readonly string[]) {
 		const nativeDate = Date;
 		const queue = [...queuedInstants];
 		// The queue is opt-in and changes only synchronous zero-argument Date captures.
+		type DateArguments =
+			| []
+			| [value: string | number]
+			| [
+					year: number,
+					monthIndex: number,
+					date?: number,
+					hours?: number,
+					minutes?: number,
+					seconds?: number,
+					ms?: number,
+				];
 		globalThis.Date = class extends nativeDate {
-			constructor(...args: ConstructorParameters<typeof Date>) {
-				super(...(args.length === 0 && queue.length > 0 ? [queue.shift()!] : args));
+			constructor(...args: DateArguments) {
+				if (args.length === 0 && queue.length > 0) {
+					super(queue.shift()!);
+				} else if (args.length === 0) {
+					super();
+				} else if (args.length === 1) {
+					super(args[0]);
+				} else {
+					super(...args);
+				}
 			}
 		} as DateConstructor;
 	}, instants);

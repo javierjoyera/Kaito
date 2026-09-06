@@ -7,8 +7,8 @@ import {
 	type ApproachChoice,
 	type TrainingApproach,
 	type TrainingApproachAssessment,
-} from "../_domain/training-approach-choice";
-import { StepNavigator } from "./step-navigator";
+} from "../../_domain/training-approach-choice";
+import { StepNavigator } from "../flow/step-navigator";
 
 type Props = Readonly<{
 	assessment: TrainingApproachAssessment;

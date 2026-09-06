@@ -2,9 +2,9 @@ import type {
 	AvailabilityAction,
 	AvailabilityInteractionState,
 	AvailabilityIssue,
-} from "../_domain/availability-model";
-import { WEEKDAY_ORDER } from "../_domain/availability-model";
-import type { WeekDay } from "../_domain/step-validation";
+} from "../../_domain/availability-model";
+import { WEEKDAY_ORDER } from "../../_domain/availability-model";
+import type { WeekDay } from "../../_domain/step-validation";
 
 type AvailabilityStepProps = Readonly<{
 	value: AvailabilityInteractionState;

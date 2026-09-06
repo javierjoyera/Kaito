@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { OnboardingExperience } from "../../../features/onboarding/_components/onboarding-experience";
+import { OnboardingExperience } from "../../../features/onboarding/_components/flow/onboarding-experience";
 import { getServerSessionResult } from "../../../features/auth/_infrastructure/supabase/server";
 import { getServerProductRouteDecision } from "../../../features/product-routing/_adapters/server-product-route-state";
 import { ProductRouteUnavailable } from "../../../features/product-routing/_components/product-route-unavailable";

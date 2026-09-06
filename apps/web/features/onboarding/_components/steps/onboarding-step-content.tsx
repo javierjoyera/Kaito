@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
 
-import type { StepId } from "../_domain/steps";
+import type { StepId } from "../../_domain/steps";
 import type {
 	AvailabilityAction,
 	AvailabilityInteractionState,
 	AvailabilityIssue,
-} from "../_domain/availability-model";
+} from "../../_domain/availability-model";
 import type {
 	BaselineDraft,
 	FieldErrors,
@@ -14,7 +14,7 @@ import type {
 	PhysicalStatusDraft,
 	PriorHistoryDraft,
 	TrainingPreferencesDraft,
-} from "../_domain/step-validation";
+} from "../../_domain/step-validation";
 import { AvailabilityStep } from "./availability-step";
 import { BaselineStep } from "./baseline-step";
 import { GoalStep } from "./goal-step";
