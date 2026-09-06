@@ -1,4 +1,4 @@
-import type { FieldErrorCode } from "../_domain/step-validation";
+import type { FieldErrorCode } from "../../_domain/step-validation";
 
 export function fieldErrorMessage(
 	code: FieldErrorCode | undefined,

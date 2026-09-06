@@ -3,6 +3,10 @@ import { it } from "node:test";
 import { useEffect } from "react";
 import { withDomComponentTest } from "./dom-component-test-harness";
 
+declare global {
+	var IS_REACT_ACT_ENVIRONMENT: boolean | undefined;
+}
+
 function restoreGlobal(name: string, descriptor?: PropertyDescriptor): void {
 	if (descriptor) {
 		Object.defineProperty(globalThis, name, descriptor);

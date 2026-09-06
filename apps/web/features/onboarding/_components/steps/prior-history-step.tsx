@@ -5,9 +5,9 @@ import type {
 	MountainExperience,
 	PriorHistoryDraft,
 	PriorModalityRaceFrequency,
-} from "../_domain/step-validation";
-import { fieldErrorMessage } from "./field-messages";
-import { NumberField } from "./number-field";
+} from "../../_domain/step-validation";
+import { fieldErrorMessage } from "../fields/field-messages";
+import { NumberField } from "../fields/number-field";
 
 type PriorHistoryStepProps = Readonly<{
 	value: PriorHistoryDraft;

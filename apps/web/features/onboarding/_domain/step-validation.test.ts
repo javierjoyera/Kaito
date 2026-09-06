@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert";
 import { describe, test } from "node:test";
 
-import { fieldErrorMessage } from "../_components/field-messages";
+import { fieldErrorMessage } from "../_components/fields/field-messages";
 import { validateStep, type OnboardingSnapshotDraft } from "./step-validation";
 
 function draft(

@@ -1,4 +1,4 @@
-import { OnboardingStatusSurface } from "../../../features/onboarding/_components/onboarding-status-surface";
+import { OnboardingStatusSurface } from "../../../features/onboarding/_components/flow/onboarding-status-surface";
 
 export default function OnboardingLoading() {
 	return (
